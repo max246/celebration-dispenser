@@ -1,0 +1,13 @@
+# PlatformIO build output
+firmware/.pio/
+.pio/
+
+# Secrets (WiFi creds + stream URL) — copy secrets.h.example to secrets.h
+firmware/include/secrets.h
+
+# OpenSCAD editor backups
+*.scad.bak
+
+# OS cruft
+.DS_Store
+Thumbs.db
