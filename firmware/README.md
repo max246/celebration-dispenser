@@ -107,7 +107,8 @@ Presses during a celebration are ignored. When idle, the motor is de-energized
 
 | Want to…                        | Change in `config.h`                       |
 |---------------------------------|--------------------------------------------|
-| Dispense more/less              | `DISPENSE_REVS`                            |
+| Dispense more/less              | `DISPENSE_REVS` (wheel revolutions)        |
+| Change the gears                | `GEAR_RATIO` (default 36T/12T = 3:1)       |
 | Dispense faster/slower          | `STEPPER_MAX_SPEED`, `STEPPER_ACCEL`      |
 | Reverse direction               | `DISPENSE_CW`                             |
 | Motor current                   | `MOTOR_CURRENT_MA`                        |

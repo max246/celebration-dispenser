@@ -26,7 +26,10 @@ void enableDriver(bool on) {
 }
 
 long dispenseSteps() {
-  const long steps = (long)(DISPENSE_REVS * STEPS_PER_REV * MICROSTEPPING);
+  // DISPENSE_REVS is wheel output revolutions; multiply by the gear ratio to
+  // get motor revolutions, then by steps/rev and microstepping.
+  const long steps =
+      (long)(DISPENSE_REVS * GEAR_RATIO * STEPS_PER_REV * MICROSTEPPING);
   return DISPENSE_CW ? steps : -steps;
 }
 

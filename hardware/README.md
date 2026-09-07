@@ -24,6 +24,9 @@ your printer's bed. Preview renders are in [`stl/previews/`](stl/previews/).
 | `housing-main-608.stl`           | 174 × 195 × 92    | Main housing; holds the wheel + 608 bearings |
 | `housing-lid-608.stl`            | 174 × 195 × 10    | Housing lid (6× M3×8)                  |
 | `vane-wheel-v5-half-blade.stl`   | 90 × 90 × 80      | Finger wheel — takes the zip-tie fingers |
+| `wheel-drive-pinion-12T.stl`     | 21 × 21 × 20      | 12T pinion on the NEMA 17 shaft         |
+| `wheel-driven-gear-36T-v2.stl`   | 57 × 57 × 28      | 36T gear on the 8 mm wheel shaft (3:1)  |
+| `wheel-motor-bracket-v5-counterbore.stl` | 117 × 40 × 26 | Motor bracket (holds the NEMA 17)   |
 | `hopper-extension-onepiece.stl`  | 204 × 94 × 150    | Hopper body; bolts to the housing mouth |
 | `hopper-lid.stl`                 | 212 × 18 × 166    | Hopper lid (friction fit, no hardware) |
 | `stand-top-plate.stl`            | 180 × 99 × 3      | Plate the housing mounts to            |
@@ -68,7 +71,8 @@ Wiring and pin map: [`../firmware/README.md`](../firmware/README.md).
 | Super glue (CA)               | —    | To fix the zip-tie fingers in their slots |
 | 608 bearings (8 mm bore)      | 2    | Support the wheel shaft in the housing   |
 | 8 mm shaft                    | 1    | Rides in the 608 bearings                |
-| M3 grub / set screw           | 1    | Locks the wheel to the shaft             |
+| M3 grub / set screw           | 3    | 1 locks the wheel, 2 lock the 36T gear, to the shaft |
+| M3 × 25 screws                | 2    | Motor-bracket standoffs (bottom out on the lid) |
 | M3 × 8 screws                 | 6    | Housing lid → housing                    |
 | M4 bolt + nut                 | 4    | Hopper extension → housing mouth-flange  |
 | M4 × 20 screws                | 4    | Stand: up into the leg bottoms           |
@@ -96,9 +100,21 @@ Wiring and pin map: [`../firmware/README.md`](../firmware/README.md).
 2. **Wheel on the shaft** — fit the two **608 bearings** and the **8 mm shaft**
    into the housing, mount the finger wheel on the shaft, and lock it with the
    **M3 grub screw**.
-3. **Couple the stepper** to the shaft and mount the motor.
-4. **Close the lid** — `housing-lid-608` onto `housing-main-608` with
-   **6× M3×8**.
+3. **Close the lid** — `housing-lid-608` onto `housing-main-608` with
+   **6× M3×8**, leaving the 8 mm shaft protruding for the drive train.
+
+### Section 2b — Drive train
+
+![Section 2b — Drive train (shaft, gear, bracket, motor)](section2b-drivetrain.png)
+
+1. **36T gear** — slide `wheel-driven-gear-36T-v2` onto the protruding 8 mm
+   shaft and lock it with **2× M3 grub** screws.
+2. **12T pinion** — fit `wheel-drive-pinion-12T` onto the NEMA 17 shaft.
+3. **Bracket + motor** — bolt the motor to `wheel-motor-bracket-v5-counterbore`
+   and fasten the bracket to the lid on **2× M3×25** standoffs. The standoffs
+   bottom out on the lid so the gears can't be squeezed together; the pinion
+   meshes with the 36T gear at a **36 mm centre distance** for a **3:1
+   reduction**.
 
 ### Section 3 — Hopper stack
 

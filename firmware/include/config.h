@@ -39,7 +39,10 @@ static const bool USE_STEALTHCHOP  = true; // quiet mode (StallGuard4 still work
 
 // ---- Stepper / dispensing --------------------------------------------------
 static const long STEPS_PER_REV = 200;     // 1.8°/step NEMA 17 = 200 full steps
-static const float DISPENSE_REVS = 1.0f;   // output revolutions per celebration
+// Gear reduction from motor to the finger wheel: 12T pinion -> 36T gear = 3:1.
+// The motor turns GEAR_RATIO times for one wheel revolution.
+static const float GEAR_RATIO   = 36.0f / 12.0f;
+static const float DISPENSE_REVS = 1.0f;   // WHEEL (output) revolutions per celebration
 static const bool  DISPENSE_CW   = true;   // false to reverse
 static const float STEPPER_MAX_SPEED = 1600.0f;  // microsteps/sec
 static const float STEPPER_ACCEL     = 3200.0f;  // microsteps/sec^2
