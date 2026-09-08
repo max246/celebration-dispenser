@@ -29,7 +29,7 @@ your printer's bed. Preview renders are in [`stl/previews/`](stl/previews/).
 | `wheel-motor-bracket-v5-counterbore.stl` | 117 × 40 × 26 | Motor bracket (holds the NEMA 17)   |
 | `hopper-extension-onepiece.stl`  | 204 × 94 × 150    | Hopper body; bolts to the housing mouth |
 | `hopper-lid.stl`                 | 212 × 18 × 166    | Hopper lid (friction fit, no hardware) |
-| `stand-top-plate.stl`            | 180 × 99 × 3      | Plate the housing mounts to            |
+| `stand-top-plate.stl`            | 184 × 106 × 3     | Plate the housing mounts to            |
 | `stand-leg-single.stl`           | 70 × 200 × 57     | Leg — print **×4** (1 + mirror 3 in your slicer) |
 | `stand-bottom-frame.stl`         | 300 × 8 × 200     | Base frame tying the legs together     |
 
@@ -82,7 +82,7 @@ Wiring and pin map: [`../firmware/README.md`](../firmware/README.md).
 
 ### Section 1 — Stand
 
-![Section 1 — Stand (with hardware)](section1-stand-hardware-v2.png)
+![Section 1 — Stand (with hardware)](section1-stand-fixed-plate-v2.png)
 
 1. **Frame** — lay `stand-bottom-frame` flat on the table.
 2. **Legs ×4** — fit a leg into each frame corner and fasten from below with
