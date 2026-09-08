@@ -123,11 +123,18 @@ Wiring and pin map: [`../firmware/README.md`](../firmware/README.md).
 
 ### Section 2c — Rejector ramp
 
-`rejector-ramp-v2` fits inside the housing to shed excess candy back so only a
-metered amount reaches the outlet.
+![Rejector ramp v2 vs. the v5 finger wheel](rampv2-vs-v5wheel-fingers.png)
 
-> 🚧 Fit diagram in progress — exact placement/fasteners will be filled in from
-> the 2D fit view.
+`rejector-ramp-v2` mounts against the housing's **feed-side wall** (top, below
+the hopper mouth). Its lower tip sits **just outside the finger sweep** — the
+zip-tie fingers reach ~24 mm proud of the r21.5 wheel — forming a narrowing gap.
+As the wheel turns, surplus candy is pushed back up the ramp toward the hopper
+while the fingers carry only a metered amount down to the outlet.
+
+- Set the ramp tip to **just clear the finger tips** (no contact) — this gap is
+  what sets the portion, so tune it against your candy size.
+- The fit view shows no fasteners: the ramp seats against the wall (glue or a
+  printed slot). Confirm how yours attaches and I'll note it here.
 
 ### Section 3 — Hopper stack
 
