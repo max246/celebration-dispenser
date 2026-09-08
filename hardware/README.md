@@ -71,8 +71,9 @@ Wiring and pin map: [`../firmware/README.md`](../firmware/README.md).
 |-------------------------------|------|------------------------------------------|
 | Zip ties (~2.5 mm wide)       | 30   | Wheel **fingers** — 24 mm proud, glued in the slots |
 | Super glue (CA)               | —    | To fix the zip-tie fingers in their slots |
-| 608 bearings (8 mm bore)      | 2    | Support the wheel shaft in the housing   |
+| 608 bearings (8 mm bore)      | 2    | Front seat in the housing + one in the rear-bearing-block |
 | 8 mm shaft                    | 1    | Rides in the 608 bearings                |
+| M3 screws                     | 4    | Rear-bearing-block → housing rear        |
 | M3 grub / set screw           | 3    | 1 locks the wheel, 2 lock the 36T gear, to the shaft |
 | M3 × 25 screws                | 2    | Motor-bracket standoffs (bottom out on the lid) |
 | M3 × 8 screws                 | 6    | Housing lid → housing                    |
@@ -99,10 +100,12 @@ Wiring and pin map: [`../firmware/README.md`](../firmware/README.md).
 
 1. **Fingers** — push **30 zip ties** into the wheel's slots so ~**24 mm**
    stands proud, and **glue** them in place.
-2. **Wheel on the shaft** — fit the two **608 bearings** and the **8 mm shaft**
-   into the housing, mount the finger wheel on the shaft, and lock it with the
+2. **Shaft + bearings** — seat one **608 bearing** in the housing (front) and
+   the other in `rear-bearing-block`, then run the **8 mm shaft** through both.
+   Screw the rear-bearing-block to the back of the housing (**4× M3**).
+3. **Finger wheel** — mount the wheel on the shaft and lock it with the
    **M3 grub screw**.
-3. **Close the lid** — `housing-lid-608` onto `housing-main-608` with
+4. **Close the lid** — `housing-lid-608` onto `housing-main-608` with
    **6× M3×8**, leaving the 8 mm shaft protruding for the drive train.
 
 ### Section 2b — Drive train
@@ -117,6 +120,14 @@ Wiring and pin map: [`../firmware/README.md`](../firmware/README.md).
    bottom out on the lid so the gears can't be squeezed together; the pinion
    meshes with the 36T gear at a **36 mm centre distance** for a **3:1
    reduction**.
+
+### Section 2c — Rejector ramp
+
+`rejector-ramp-v2` fits inside the housing to shed excess candy back so only a
+metered amount reaches the outlet.
+
+> 🚧 Fit diagram in progress — exact placement/fasteners will be filled in from
+> the 2D fit view.
 
 ### Section 3 — Hopper stack
 
