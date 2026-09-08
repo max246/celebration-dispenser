@@ -8,6 +8,8 @@ settings, bill of materials, and assembly.
 |----------------------------------|----------------------------------------|
 | `housing-main-608.stl`           | Main housing; holds the finger wheel + bearings |
 | `housing-lid-608.stl`            | Housing lid                            |
+| `rear-bearing-block.stl`         | Rear 608-bearing block (supports shaft)|
+| `rejector-ramp-v2.stl`           | Rejector ramp inside the housing       |
 | `vane-wheel-v5-half-blade.stl`   | Finger wheel — takes the zip-tie fingers      |
 | `wheel-drive-pinion-12T.stl`     | 12T pinion on the motor shaft          |
 | `wheel-driven-gear-36T-v2.stl`   | 36T gear on the 8 mm wheel shaft (3:1) |

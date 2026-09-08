@@ -23,6 +23,8 @@ your printer's bed. Preview renders are in [`stl/previews/`](stl/previews/).
 |----------------------------------|-------------------|----------------------------------------|
 | `housing-main-608.stl`           | 174 × 195 × 92    | Main housing; holds the wheel + 608 bearings |
 | `housing-lid-608.stl`            | 174 × 195 × 10    | Housing lid (6× M3×8)                  |
+| `rear-bearing-block.stl`         | 40 × 40 × 10      | Rear 608-bearing block; supports the shaft's back end |
+| `rejector-ramp-v2.stl`           | 20 × 70 × 80      | Rejector ramp inside the housing (sheds excess candy) |
 | `vane-wheel-v5-half-blade.stl`   | 90 × 90 × 80      | Finger wheel — takes the zip-tie fingers |
 | `wheel-drive-pinion-12T.stl`     | 21 × 21 × 20      | 12T pinion on the NEMA 17 shaft         |
 | `wheel-driven-gear-36T-v2.stl`   | 57 × 57 × 28      | 36T gear on the 8 mm wheel shaft (3:1)  |
