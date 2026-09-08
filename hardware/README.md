@@ -19,21 +19,21 @@ The fingers reach out to a wide annulus so they sweep close to the housing wall
 Files in [`stl/`](stl/), with measured bounding boxes so you can check they fit
 your printer's bed. Preview renders are in [`stl/previews/`](stl/previews/).
 
-| File                             | Size X×Y×Z (mm)   | Role                                   |
-|----------------------------------|-------------------|----------------------------------------|
-| `housing-main-608.stl`           | 174 × 195 × 92    | Main housing; holds the wheel + 608 bearings |
-| `housing-lid-608.stl`            | 174 × 195 × 10    | Housing lid (6× M3×8)                  |
-| `rear-bearing-block.stl`         | 40 × 40 × 10      | Rear 608-bearing block; supports the shaft's back end |
-| `rejector-ramp-v2.stl`           | 20 × 70 × 80      | Rejector ramp inside the housing (sheds excess candy) |
-| `vane-wheel-v5-half-blade.stl`   | 90 × 90 × 80      | Finger wheel — takes the zip-tie fingers |
-| `wheel-drive-pinion-12T.stl`     | 21 × 21 × 20      | 12T pinion on the NEMA 17 shaft         |
-| `wheel-driven-gear-36T-v2.stl`   | 57 × 57 × 28      | 36T gear on the 8 mm wheel shaft (3:1)  |
-| `wheel-motor-bracket-v5-counterbore.stl` | 117 × 40 × 26 | Motor bracket (holds the NEMA 17)   |
-| `hopper-extension-onepiece.stl`  | 204 × 94 × 150    | Hopper body; bolts to the housing mouth |
-| `hopper-lid.stl`                 | 212 × 18 × 166    | Hopper lid (friction fit, no hardware) |
-| `stand-top-plate.stl`            | 184 × 106 × 3     | Plate the housing mounts to            |
-| `stand-leg-single.stl`           | 70 × 200 × 57     | Leg — print **×4** (1 + mirror 3 in your slicer) |
-| `stand-bottom-frame.stl`         | 300 × 8 × 200     | Base frame tying the legs together     |
+| File                             | Print qty | Size X×Y×Z (mm) | Role                          |
+|----------------------------------|-----------|-----------------|-------------------------------|
+| `housing-main-608.stl`           | 1         | 174 × 195 × 92  | Main housing; holds the wheel + 608 bearings |
+| `housing-lid-608.stl`            | 1         | 174 × 195 × 10  | Housing lid (6× M3×8)         |
+| `rear-bearing-block.stl`         | 1         | 40 × 40 × 10    | Rear 608-bearing block; supports the shaft's back end |
+| `rejector-ramp-v2.stl`           | 1         | 20 × 70 × 80    | Rejector ramp inside the housing (sheds excess candy) |
+| `vane-wheel-v5-half-blade.stl`   | 1         | 90 × 90 × 80    | Finger wheel — takes the zip-tie fingers |
+| `wheel-drive-pinion-12T.stl`     | 1         | 21 × 21 × 20    | 12T pinion on the NEMA 17 shaft |
+| `wheel-driven-gear-36T-v2.stl`   | 1         | 57 × 57 × 28    | 36T gear on the 8 mm wheel shaft (3:1) |
+| `wheel-motor-bracket-v5-counterbore.stl` | 1 | 117 × 40 × 26   | Motor bracket (holds the NEMA 17) |
+| `hopper-extension-onepiece.stl`  | 1         | 204 × 94 × 150  | Hopper body; bolts to the housing mouth |
+| `hopper-lid.stl`                 | 1         | 212 × 18 × 166  | Hopper lid (friction fit, no hardware) |
+| `stand-top-plate.stl`            | 1         | 184 × 106 × 3   | Plate the housing mounts to   |
+| `stand-leg-single.stl`           | **4**     | 70 × 200 × 57   | Stand leg — **print 4** (1 + mirror 3 in your slicer) |
+| `stand-bottom-frame.stl`         | 1         | 300 × 8 × 200   | Base frame tying the legs together |
 
 > `housing-main` and the hopper are large (≈195–212 mm on their longest edge) —
 > confirm they fit your build plate before slicing.
