@@ -31,7 +31,8 @@ cp include/secrets.h.example include/secrets.h   # then edit in your WiFi + URL
 ## Wiring
 
 Default pin map (edit in [`include/config.h`](include/config.h)). Pins are named
-by the Feather's **silkscreen labels**.
+by the Feather's **silkscreen labels**. For a wiring diagram of the driver +
+audio, see [`docs/WIRING.md`](../docs/WIRING.md).
 
 ### TMC2209 stepper driver
 
@@ -84,6 +85,23 @@ pio device monitor      # serial log @ 115200
 
 On boot the serial log prints the WiFi result and the TMC2209 version
 (`0x21` = UART link good).
+
+## Bench test (motor)
+
+Before wiring the whole thing, bring up just the TMC2209 + motor with the
+standalone test in `src/tools/motor_test.cpp` — a separate PlatformIO env that
+needs **no WiFi, audio, or `secrets.h`**:
+
+```bash
+pio run -e motortest -t upload
+pio device monitor -e motortest
+```
+
+It prints the driver version (`0x21` = UART OK), jogs the wheel ±1 revolution,
+and streams `speed` / `DIAG` / `SG_RESULT` so you can confirm motion and tune
+`STALL_THRESHOLD` (push on the wheel and watch `SG_RESULT` drop toward 0 / `DIAG`
+go HIGH). Wiring for this is the TMC2209 half of
+[`docs/WIRING.md`](../docs/WIRING.md).
 
 ## Behavior
 

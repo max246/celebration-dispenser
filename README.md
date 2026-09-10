@@ -34,8 +34,10 @@ idle.
 
 ## Quick start
 
-1. **Print & wire the hardware** — see [`hardware/README.md`](hardware/README.md).
-2. **Flash the firmware** — see [`firmware/README.md`](firmware/README.md).
+1. **Print & wire the hardware** — see [`hardware/README.md`](hardware/README.md)
+   and the wiring diagram in [`docs/WIRING.md`](docs/WIRING.md).
+2. **Flash the firmware** — see [`firmware/README.md`](firmware/README.md). Bench-test
+   the motor first with `pio run -e motortest -t upload`.
 3. Power it up, press the button, celebrate.
 
 ## Tuning
