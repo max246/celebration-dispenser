@@ -115,12 +115,18 @@ pio run -e audiotest -t upload
 pio device monitor -e audiotest
 ```
 
-It connects to WiFi, streams a free sample MP3
-(`https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3`) to the amp, and
-prints `[info]/[id3]/[eof]` diagnostics. You should hear audio within a few
-seconds and see `[eof] Playback finished.` at the end. If HTTPS is flaky on your
-network, swap `TEST_URL` for one of the plain-HTTP radio streams listed in the
-file. Wiring is the MAX98357A half of [`docs/WIRING.md`](../docs/WIRING.md).
+It connects to WiFi, streams a free sample (a plain-HTTP 128k stream by default)
+to the amp, and prints `[info]/[id3]` diagnostics. You should hear clean audio
+within a few seconds.
+
+> **Use HTTP, not HTTPS, for audio on the S2.** TLS decryption on the single
+> core is throughput- and heap-limited (~37 KB/s, ~18 KB free heap) — only just
+> above the playback rate, which causes crackle/stutter. Plain HTTP streams at
+> full speed and plays clean, so host your real sounds (`AUDIO_URL` /
+> `IDLE_AUDIO_URL`) over **HTTP**, ideally on your own LAN. Alternate URLs are
+> listed in `audio_test.cpp`.
+
+Wiring is the MAX98357A half of [`docs/WIRING.md`](../docs/WIRING.md).
 
 ## Behavior
 

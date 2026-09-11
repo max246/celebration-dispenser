@@ -25,16 +25,18 @@ static const int PIN_I2S_DOUT = 37;   // "MI"
 
 static const int TEST_VOLUME = 12;    // 0..21
 
-// A free sample MP3 (SoundHelix, a finite ~5 min track — good to hear it start,
-// play, and reach end-of-file). HTTPS; works on this PSRAM board.
-static const char* TEST_URL =
-    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+// Default = a plain-HTTP 128k stream. IMPORTANT: on the single-core S2, HTTPS/TLS
+// is throughput- and heap-limited (~37 KB/s, ~18 KB heap free) — barely above the
+// playback rate, which is what causes the crackle. Plain HTTP streams at full
+// speed and plays clean, so host your real sounds over HTTP too (ideally on your
+// own LAN).
+static const char* TEST_URL = "http://ice1.somafm.com/groovesalad-128-mp3";
 
-// Alternates if HTTPS is flaky on your network — plain HTTP MP3 radio streams
-// (endless; good for a soak test):
-//   "http://mp3.ffh.de/radioffh/hqlivestream.mp3"
-//   "http://stream.antenne.de/antenne"
+// Other plain-HTTP streams to try:
 //   "http://icecast.radiofrance.fr/fip-midfi.mp3"
+//   "http://mp3.ffh.de/radioffh/hqlivestream.mp3"
+// A finite HTTPS file (plays, but crackles on the S2 due to TLS throughput):
+//   "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
 
 Audio audio;
 
