@@ -71,6 +71,7 @@ void setup() {
     Serial.println(F("!! No PSRAM detected — audio buffer will be tiny (expect glitches)."));
 
   audio.setPinout(PIN_I2S_BCLK, PIN_I2S_LRC, PIN_I2S_DOUT);
+  audio.forceMono(true);   // MAX98357A is mono; halves decode/I2S work on the S2
   audio.setVolume(TEST_VOLUME);
   Serial.print(F("Streaming: "));
   Serial.println(TEST_URL);

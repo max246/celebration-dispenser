@@ -47,6 +47,7 @@ void audioplayer::begin() {
   }
 
   audio.setPinout(PIN_I2S_BCLK, PIN_I2S_LRC, PIN_I2S_DOUT);
+  audio.forceMono(true);   // MAX98357A is mono; halves decode/I2S work on the S2
 }
 
 void audioplayer::playIdle() {
