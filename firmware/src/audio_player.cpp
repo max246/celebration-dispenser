@@ -37,6 +37,9 @@ void audioplayer::begin() {
   wifiOk = (WiFi.status() == WL_CONNECTED);
   Serial.println();
   if (wifiOk) {
+    // Disable WiFi modem power-save — its micro-sleeps stall the audio stream
+    // on the single-core S2 and cause crackle/stutter.
+    WiFi.setSleep(false);
     Serial.print(F("WiFi OK: "));
     Serial.println(WiFi.localIP());
   } else {

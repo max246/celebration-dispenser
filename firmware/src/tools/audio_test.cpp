@@ -59,6 +59,15 @@ void setup() {
   Serial.print(F("WiFi OK: "));
   Serial.println(WiFi.localIP());
 
+  // Disable WiFi modem power-save. On the single-core S2 its micro-sleeps stall
+  // the stream and cause crackle/stutter — this is the big fix for that.
+  WiFi.setSleep(false);
+
+  Serial.printf("PSRAM: %u bytes | free heap: %u | RSSI: %d dBm\n",
+                ESP.getPsramSize(), ESP.getFreeHeap(), WiFi.RSSI());
+  if (ESP.getPsramSize() == 0)
+    Serial.println(F("!! No PSRAM detected — audio buffer will be tiny (expect glitches)."));
+
   audio.setPinout(PIN_I2S_BCLK, PIN_I2S_LRC, PIN_I2S_DOUT);
   audio.setVolume(TEST_VOLUME);
   Serial.print(F("Streaming: "));
