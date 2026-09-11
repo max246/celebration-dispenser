@@ -9,6 +9,10 @@ firmware/include/secrets.h
 firmware/data/*.mp3
 firmware/data/*.wav
 
+# Source audio originals (converted to WAV in firmware/data/) — often large / licensed
+music/*.mp3
+music/*.wav
+
 # OpenSCAD editor backups
 *.scad.bak
 
