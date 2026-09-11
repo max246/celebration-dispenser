@@ -32,6 +32,11 @@ uint32_t dataStart = 0, dataEnd = 0;
 uint16_t channels = 1, bits = 16;
 uint32_t sampleRate = 22050;
 
+// The entire PCM payload is loaded into PSRAM so playback never touches flash
+// (reading flash during playback stalls the CPU -> I2S underruns -> crackle).
+int16_t* pcm = nullptr;   // interleaved samples in PSRAM
+uint32_t pcmSamples = 0;  // total int16 samples (frames * channels)
+
 static bool parseWav() {
   if (wav.size() < 44) return false;
   wav.seek(0);
@@ -109,35 +114,50 @@ void setup() {
     Serial.println(F("Not a supported 16-bit PCM WAV."));
     return;
   }
+  const uint32_t dataBytes = dataEnd - dataStart;
   Serial.printf("WAV: %u Hz, %u ch, %u-bit, %u bytes of audio\n",
-                sampleRate, channels, bits, dataEnd - dataStart);
-  setupI2S(sampleRate);
+                sampleRate, channels, bits, dataBytes);
+
+  // Load the whole payload into PSRAM.
+  pcm = (int16_t*)ps_malloc(dataBytes);
+  if (!pcm) {
+    Serial.printf("ps_malloc(%u) FAILED — PSRAM missing or file too big.\n", dataBytes);
+    return;
+  }
   wav.seek(dataStart);
-  Serial.println(F("Looping — should be clean."));
+  uint32_t rd = 0;
+  while (rd < dataBytes) {
+    int n = wav.read((uint8_t*)pcm + rd, min((uint32_t)8192, dataBytes - rd));
+    if (n <= 0) break;
+    rd += n;
+  }
+  wav.close();
+  pcmSamples = rd / 2;
+  Serial.printf("Loaded %u bytes into PSRAM. Looping from RAM — should be clean.\n", rd);
+
+  setupI2S(sampleRate);
 }
 
 void loop() {
+  if (!pcm) return;
+
   static const int FRAMES = 256;
-  int16_t in[FRAMES * 2];   // up to stereo
+  static uint32_t idx = 0;  // sample index into pcm[]
   int16_t out[FRAMES * 2];  // interleaved L/R to I2S
 
-  const int frameBytes = channels * 2;
-  int want = FRAMES * frameBytes;
-  if (wav.position() + want > dataEnd) wav.seek(dataStart);  // loop
-  const int got = wav.read((uint8_t*)in, want);
-  const int frames = got / frameBytes;
-
-  for (int i = 0; i < frames; i++) {
+  for (int i = 0; i < FRAMES; i++) {
     int16_t l, r;
     if (channels == 1) {
-      l = r = in[i] >> VOL_SHIFT;
+      if (idx >= pcmSamples) idx = 0;  // loop
+      l = r = pcm[idx++] >> VOL_SHIFT;
     } else {
-      l = in[2 * i] >> VOL_SHIFT;
-      r = in[2 * i + 1] >> VOL_SHIFT;
+      if (idx + 1 >= pcmSamples) idx = 0;
+      l = pcm[idx++] >> VOL_SHIFT;
+      r = pcm[idx++] >> VOL_SHIFT;
     }
     out[2 * i] = l;
     out[2 * i + 1] = r;
   }
   size_t written = 0;
-  i2s_write(I2S_PORT, out, frames * 4, &written, portMAX_DELAY);
+  i2s_write(I2S_PORT, out, sizeof(out), &written, portMAX_DELAY);
 }
