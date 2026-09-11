@@ -103,6 +103,25 @@ and streams `speed` / `DIAG` / `SG_RESULT` so you can confirm motion and tune
 go HIGH). Wiring for this is the TMC2209 half of
 [`docs/WIRING.md`](../docs/WIRING.md).
 
+## Bench test (audio)
+
+Check the MAX98357A + WiFi streaming in isolation with `src/tools/audio_test.cpp`
+— its own env. It **needs your WiFi in `include/secrets.h`** (copy the example
+first); it does not touch the motor.
+
+```bash
+cp include/secrets.h.example include/secrets.h   # if you haven't already
+pio run -e audiotest -t upload
+pio device monitor -e audiotest
+```
+
+It connects to WiFi, streams a free sample MP3
+(`https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3`) to the amp, and
+prints `[info]/[id3]/[eof]` diagnostics. You should hear audio within a few
+seconds and see `[eof] Playback finished.` at the end. If HTTPS is flaky on your
+network, swap `TEST_URL` for one of the plain-HTTP radio streams listed in the
+file. Wiring is the MAX98357A half of [`docs/WIRING.md`](../docs/WIRING.md).
+
 ## Behavior
 
 While **idle**, a looping ambient sound (`IDLE_AUDIO_URL`, at `IDLE_VOLUME`)

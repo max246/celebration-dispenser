@@ -66,10 +66,12 @@ WiFi/audio needed) — see [Bench test](../firmware/README.md#bench-test-motor):
 
 ```bash
 cd firmware
-pio run -e motortest -t upload
-pio device monitor -e motortest
+pio run -e motortest -t upload      # motor / TMC2209
+pio run -e audiotest -t upload      # audio / MAX98357A (needs secrets.h WiFi)
+pio device monitor -e motortest     # (or -e audiotest)
 ```
 
-You want to see `TMC2209 version: 0x21` (UART link OK), the wheel jogging back
-and forth, and a live `SG_RESULT` load reading you can use to tune
-`STALL_THRESHOLD`.
+- **Motor:** expect `TMC2209 version: 0x21` (UART OK), the wheel jogging back and
+  forth, and a live `SG_RESULT` reading to tune `STALL_THRESHOLD`.
+- **Audio:** expect WiFi to connect and a free sample MP3 to stream to the amp,
+  ending with `[eof] Playback finished.`

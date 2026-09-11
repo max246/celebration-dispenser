@@ -1,0 +1,78 @@
+// ===========================================================================
+//  Audio streaming test — Celebration Dispenser
+//
+//  Standalone MAX98357A + WiFi bring-up: connects to WiFi and streams a free
+//  sample MP3 from the web to the I2S amp. Build/flash with:
+//
+//      pio run -e audiotest -t upload
+//      pio device monitor -e audiotest
+//
+//  Needs your WiFi in firmware/include/secrets.h (copy secrets.h.example).
+//  The stream URL below is a public sample; swap it for any of the alternates.
+//
+//  I2S pins MUST match firmware/include/config.h.
+// ===========================================================================
+#include <Arduino.h>
+#include <WiFi.h>
+
+#include "Audio.h"     // ESP32-audioI2S (schreibfaul1)
+#include "secrets.h"   // WIFI_SSID / WIFI_PASS
+
+// ---- I2S pins (match config.h) ----
+static const int PIN_I2S_BCLK = 36;   // "SCK"
+static const int PIN_I2S_LRC  = 35;   // "MO"
+static const int PIN_I2S_DOUT = 37;   // "MI"
+
+static const int TEST_VOLUME = 12;    // 0..21
+
+// A free sample MP3 (SoundHelix, a finite ~5 min track — good to hear it start,
+// play, and reach end-of-file). HTTPS; works on this PSRAM board.
+static const char* TEST_URL =
+    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+
+// Alternates if HTTPS is flaky on your network — plain HTTP MP3 radio streams
+// (endless; good for a soak test):
+//   "http://mp3.ffh.de/radioffh/hqlivestream.mp3"
+//   "http://stream.antenne.de/antenne"
+//   "http://icecast.radiofrance.fr/fip-midfi.mp3"
+
+Audio audio;
+
+void setup() {
+  Serial.begin(115200);
+  delay(400);
+  Serial.println(F("\n=== Celebration Dispenser — audio streaming test ==="));
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.print(F("WiFi connecting"));
+  const unsigned long t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < 20000) {
+    delay(250);
+    Serial.print('.');
+  }
+  Serial.println();
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println(F("WiFi FAILED — check WIFI_SSID/WIFI_PASS in secrets.h."));
+    return;
+  }
+  Serial.print(F("WiFi OK: "));
+  Serial.println(WiFi.localIP());
+
+  audio.setPinout(PIN_I2S_BCLK, PIN_I2S_LRC, PIN_I2S_DOUT);
+  audio.setVolume(TEST_VOLUME);
+  Serial.print(F("Streaming: "));
+  Serial.println(TEST_URL);
+  audio.connecttohost(TEST_URL);
+}
+
+void loop() {
+  audio.loop();   // must be serviced constantly to keep the stream fed
+}
+
+// ---- optional diagnostics emitted by ESP32-audioI2S ----
+void audio_info(const char* info)     { Serial.print(F("[info] ")); Serial.println(info); }
+void audio_id3data(const char* info)  { Serial.print(F("[id3 ] ")); Serial.println(info); }
+void audio_showstreamtitle(const char* info) { Serial.print(F("[song] ")); Serial.println(info); }
+void audio_eof_mp3(const char* info)  { Serial.print(F("[eof ] ")); Serial.println(info);
+                                        Serial.println(F("Playback finished.")); }
