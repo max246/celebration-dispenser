@@ -23,7 +23,7 @@ static const int PIN_I2S_BCLK = 36;   // "SCK"
 static const int PIN_I2S_LRC  = 35;   // "MO"
 static const int PIN_I2S_DOUT = 37;   // "MI"
 
-static const int TEST_VOLUME = 12;    // 0..21
+static const int TEST_VOLUME = 6;     // 0..21  (low, to rule out clipping/power)
 
 // Default = a plain-HTTP 128k stream. IMPORTANT: on the single-core S2, HTTPS/TLS
 // is throughput- and heap-limited (~37 KB/s, ~18 KB heap free) — barely above the
