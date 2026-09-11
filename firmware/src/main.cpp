@@ -46,6 +46,7 @@ static void endCelebration() {
 
 void setup() {
   Serial.begin(115200);
+  delay(5000);  // give the USB serial monitor time to attach before we start
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 
   lights::begin();

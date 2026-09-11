@@ -40,7 +40,7 @@ Audio audio;
 
 void setup() {
   Serial.begin(115200);
-  delay(400);
+  delay(5000);  // give the USB serial monitor time to attach before we start
   Serial.println(F("\n=== Celebration Dispenser — audio streaming test ==="));
 
   WiFi.mode(WIFI_STA);
