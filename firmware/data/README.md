@@ -16,7 +16,11 @@ Expected files (names set in [`../include/config.h`](../include/config.h)):
 
 Tips:
 - **MP3, ≤128 kbps** keeps decode light on the S2 and files small.
-- The LittleFS partition is ~1.4 MB, so keep the two files under that combined
-  (≈90 s of 128 kbps audio). Shorten the idle loop if needed.
+- The LittleFS partition is **~2 MB** (see `../partitions_audio.csv`), so keep
+  both files under that combined (≈2 min of 128 kbps audio). If a file is too
+  big, re-encode lower, e.g.:
+  ```bash
+  ffmpeg -i in.mp3 -codec:a libmp3lame -b:a 96k -ac 1 idle.mp3
+  ```
 - The `.mp3` files are git-ignored (they can be large / personal); only this
   README is tracked.
