@@ -14,13 +14,28 @@ Expected files (names set in [`../include/config.h`](../include/config.h)):
 | `celebrate.mp3` | on each button press (`AUDIO_FILE`) |
 | `idle.mp3`      | looped while idle (`IDLE_FILE`)     |
 
-Tips:
-- **MP3, ≤128 kbps** keeps decode light on the S2 and files small.
-- The LittleFS partition is **~2 MB** (see `../partitions_audio.csv`), so keep
-  both files under that combined (≈2 min of 128 kbps audio). If a file is too
-  big, re-encode lower, e.g.:
+## Encoding (important for the single-core S2)
+
+The S2 has one CPU core, so MP3 decode at 44.1 kHz can't quite keep up with
+real-time — it plays a few seconds (the buffer), then crackles. Encode for a
+light decode load:
+
+- **22050 Hz, mono, CBR, no metadata** — halves the decode work vs 44.1 kHz:
   ```bash
-  ffmpeg -i in.mp3 -codec:a libmp3lame -b:a 96k -ac 1 idle.mp3
+  ffmpeg -i in.mp3 -map_metadata -1 -c:a libmp3lame -ar 22050 -b:a 96k -ac 1 idle.mp3
   ```
+  (`-map_metadata -1` strips ID3/Xing headers, which can also stop it decoding.)
+- **Still crackling? Use WAV** — raw PCM has *zero* decode cost, so it always
+  plays clean on the S2:
+  ```bash
+  ffmpeg -i in.mp3 -map_metadata -1 -ar 22050 -ac 1 -c:a pcm_s16le idle.wav
+  ```
+  (then set the file names in `../include/config.h` to `.wav`.)
+
+## Size
+
+- The LittleFS partition is **~2 MB** (see `../partitions_audio.csv`). MP3 at
+  96 kbps ≈ 12 KB/s (~2.7 min); 22 kHz mono WAV ≈ 44 KB/s (~45 s). Keep both
+  files under 2 MB combined; shorten the idle loop if needed.
 - The `.mp3` files are git-ignored (they can be large / personal); only this
   README is tracked.
