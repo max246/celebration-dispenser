@@ -76,9 +76,9 @@ static const unsigned long DEBOUNCE_MS = 40;
 // firmware/data/ and run `pio run -t uploadfs`. Volumes are 0-21.
 static const char* const AUDIO_FILE = "/celebrate.wav";
 static const char* const IDLE_FILE  = "/idle.wav";
-static const int  CELEBRATION_VOLUME = 15;
+static const int  CELEBRATION_VOLUME = 21;    // 0-21 (21 = full digital scale)
 static const bool ENABLE_IDLE_AUDIO  = true;  // loop an ambient sound while idle
-static const int  IDLE_VOLUME        = 8;     // usually quieter than celebration
+static const int  IDLE_VOLUME        = 12;    // usually quieter than celebration
 
 // ---- Celebration timing ----------------------------------------------------
 // The show runs at least this long even if the motor finishes early.

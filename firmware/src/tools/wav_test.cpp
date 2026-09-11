@@ -21,7 +21,7 @@ static const int PIN_I2S_BCLK = 36;   // "SCK"
 static const int PIN_I2S_LRC  = 35;   // "MO"
 static const int PIN_I2S_DOUT = 37;   // "MI"
 
-static const int VOL_SHIFT = 1;                 // >>1 ~= half amplitude
+static const int VOL_SHIFT = 0;                 // 0 = full scale, 1 = half, 2 = quarter
 static const unsigned long CELEB_EVERY_MS = 12000;
 static const i2s_port_t I2S_PORT = I2S_NUM_0;
 
