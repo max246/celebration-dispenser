@@ -10,23 +10,31 @@ ESP32-S2 firmware for the Celebration Dispenser, built with
 ```
 firmware/
 ├── platformio.ini            # board + pinned dependencies
+├── data/                     # audio files -> LittleFS (celebrate.mp3, idle.mp3)
 ├── include/
 │   ├── config.h              # ALL tunables: pins, dispense, stall, LEDs, audio
-│   ├── secrets.h.example      # copy -> secrets.h (WiFi + stream URL; git-ignored)
-│   └── secrets.h              # your credentials (not committed)
+│   └── secrets.h.example      # only for the streaming audio *test* (git-ignored)
 └── src/
     ├── main.cpp              # button + celebration state machine
     ├── motor.{h,cpp}         # TMC2209 (UART) + AccelStepper + StallGuard unjam
-    ├── audio_player.{h,cpp}  # WiFi + streamed-URL audio over I2S (MAX98357A)
+    ├── audio_player.{h,cpp}  # LittleFS audio over I2S (MAX98357A)
     └── lights.{h,cpp}        # non-blocking WS2812 rainbow show
 ```
 
 ## First-time setup
 
+Audio plays from on-board flash (no WiFi — see the note in **Behavior**). Put your
+sounds in [`data/`](data/) and upload them once:
+
 ```bash
 cd firmware
-cp include/secrets.h.example include/secrets.h   # then edit in your WiFi + URL
+# put celebrate.mp3 and idle.mp3 in data/  (MP3, <=128 kbps)
+pio run -t uploadfs      # writes data/ to the LittleFS partition
+pio run -t upload        # flash the firmware
 ```
+
+The main firmware needs **no `secrets.h`** — that's only for the optional
+streaming audio test.
 
 ## Wiring
 
@@ -83,7 +91,7 @@ pio run -t upload       # flash over USB (native USB CDC on the S2)
 pio device monitor      # serial log @ 115200
 ```
 
-On boot the serial log prints the WiFi result and the TMC2209 version
+On boot the serial log prints whether LittleFS mounted and the TMC2209 version
 (`0x21` = UART link good).
 
 ## Bench test (motor)
@@ -105,33 +113,31 @@ go HIGH). Wiring for this is the TMC2209 half of
 
 ## Bench test (audio)
 
-Check the MAX98357A + WiFi streaming in isolation with `src/tools/audio_test.cpp`
-— its own env. It **needs your WiFi in `include/secrets.h`** (copy the example
-first); it does not touch the motor.
+Two audio tools, both separate envs (wiring is the MAX98357A half of
+[`docs/WIRING.md`](../docs/WIRING.md)):
 
-```bash
-cp include/secrets.h.example include/secrets.h   # if you haven't already
-pio run -e audiotest -t upload
-pio device monitor -e audiotest
-```
-
-It connects to WiFi, streams a free sample (a plain-HTTP 128k stream by default)
-to the amp, and prints `[info]/[id3]` diagnostics. You should hear clean audio
-within a few seconds.
-
-> **Use HTTP, not HTTPS, for audio on the S2.** TLS decryption on the single
-> core is throughput- and heap-limited (~37 KB/s, ~18 KB free heap) — only just
-> above the playback rate, which causes crackle/stutter. Plain HTTP streams at
-> full speed and plays clean, so host your real sounds (`AUDIO_URL` /
-> `IDLE_AUDIO_URL`) over **HTTP**, ideally on your own LAN. Alternate URLs are
-> listed in `audio_test.cpp`.
-
-Wiring is the MAX98357A half of [`docs/WIRING.md`](../docs/WIRING.md).
+- **`tonetest`** — the definitive amp/wiring check. Plays a clean 440 Hz sine
+  straight to I2S, no WiFi/decode/library. If this is clean, the amp, speaker,
+  and I2S wiring are all good.
+  ```bash
+  pio run -e tonetest -t upload
+  ```
+- **`audiotest`** — streams a sample MP3 over WiFi (needs `secrets.h`). This is
+  what demonstrated that **streaming crackles on the single-core S2** — hence
+  the main firmware plays from flash instead. Kept for reference / for an S3.
+  ```bash
+  cp include/secrets.h.example include/secrets.h
+  pio run -e audiotest -t upload
+  ```
 
 ## Behavior
 
-While **idle**, a looping ambient sound (`IDLE_AUDIO_URL`, at `IDLE_VOLUME`)
-plays over the amp — set `ENABLE_IDLE_AUDIO = false` to disable it.
+Audio plays from **on-board flash (LittleFS)**, not streamed — the single-core
+S2 can't stream over WiFi and decode MP3 smoothly at once (a raw I2S tone is
+clean, but streaming crackles). No WiFi is used by the main firmware.
+
+While **idle**, `idle.mp3` loops over the amp (at `IDLE_VOLUME`) — set
+`ENABLE_IDLE_AUDIO = false` to disable it.
 
 Press the button → one **celebration**, all at once:
 - **Dispense:** the TMC2209 turns the finger wheel `DISPENSE_REVS` revolutions.
@@ -139,9 +145,8 @@ Press the button → one **celebration**, all at once:
   firmware backs off `UNJAM_REVERSE_STEPS` and retries — up to
   `UNJAM_MAX_RETRIES` times before giving up and logging a jam.
 - **Lights:** a rainbow sweeps the WS2812 strip.
-- **Audio:** the idle loop is interrupted and `AUDIO_URL` streams once to the
-  MAX98357A (at `CELEBRATION_VOLUME`); the idle loop resumes when it ends. If
-  WiFi didn't connect, the rest of the celebration still runs (just no sound).
+- **Audio:** the idle loop is interrupted and `celebrate.mp3` plays once (at
+  `CELEBRATION_VOLUME`); the idle loop resumes when it ends.
 
 Presses during a celebration are ignored. When idle, the motor is de-energized
 (silent, cool) unless `HOLD_TORQUE_WHEN_IDLE = true`.
@@ -161,7 +166,7 @@ Presses during a celebration are ignored. When idle, the motor is de-energized
 | More/fewer LEDs, dimmer         | `LED_COUNT`, `LED_BRIGHTNESS`            |
 | Volumes                         | `CELEBRATION_VOLUME`, `IDLE_VOLUME` (0–21) |
 | Idle ambience on/off            | `ENABLE_IDLE_AUDIO`                       |
-| Sounds / WiFi                   | `secrets.h` (`AUDIO_URL`, `IDLE_AUDIO_URL`, `WIFI_*`) |
+| Sound files                     | `AUDIO_FILE`, `IDLE_FILE` (in `data/`, then `uploadfs`) |
 
 ## Notes
 

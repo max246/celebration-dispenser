@@ -2,8 +2,8 @@
 
 A button-triggered desktop celebration machine. Press the button and it dispenses
 a treat (confetti, candy, sprinkles — your choice) via a stepper-driven mechanism
-while a WS2812 LED strip runs a light show and a streamed sound plays over a
-small amplifier.
+while a WS2812 LED strip runs a light show and a sound plays over a small
+amplifier.
 
 This repo has two halves:
 
@@ -22,14 +22,14 @@ This repo has two halves:
     │  ESP32-S2    │ ────────────────▶ │ TMC2209  │─▶ NEMA 17 ─▶ finger wheel
     │  Feather     │ ◀──── DIAG stall ─┘ (auto-unjam on jam)
     │  (WiFi)      │ ────────────────▶ WS2812 strip ─▶ light show
-    │              │ ──I2S──▶ MAX98357A ─▶ speaker ─▶ streamed audio (from URL)
+    │              │ ──I2S──▶ MAX98357A ─▶ speaker ─▶ audio (from on-board flash)
     └──────────────┘
 ```
 
 On a button press the ESP32-S2 runs a single **celebration sequence**: the
 TMC2209 turns the finger wheel to dispense a portion (backing off and retrying if
-StallGuard detects a jam), a rainbow sweeps the LED strip, and a sound is
-streamed from a URL to the MAX98357A — all at the same time — then it returns to
+StallGuard detects a jam), a rainbow sweeps the LED strip, and a sound plays from
+on-board flash through the MAX98357A — all at the same time — then it returns to
 idle.
 
 ## Quick start
@@ -44,6 +44,6 @@ idle.
 
 Almost everything you'll want to change (dispense amount, speed, stall
 sensitivity, LED count, volume, GPIO pins) lives in
-[`firmware/include/config.h`](firmware/include/config.h); WiFi credentials and
-the audio URL go in `firmware/include/secrets.h`. The printable parts and
-assembly guide live in [`hardware/`](hardware/).
+[`firmware/include/config.h`](firmware/include/config.h); the celebration and
+idle sounds are MP3s in `firmware/data/` (uploaded with `pio run -t uploadfs`).
+The printable parts and assembly guide live in [`hardware/`](hardware/).

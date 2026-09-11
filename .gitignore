@@ -2,8 +2,12 @@
 firmware/.pio/
 .pio/
 
-# Secrets (WiFi creds + stream URL) — copy secrets.h.example to secrets.h
+# Secrets (WiFi creds + stream URL) — only needed for the streaming audio test
 firmware/include/secrets.h
+
+# On-board audio files (can be large / personal) — added locally, uploaded with uploadfs
+firmware/data/*.mp3
+firmware/data/*.wav
 
 # OpenSCAD editor backups
 *.scad.bak

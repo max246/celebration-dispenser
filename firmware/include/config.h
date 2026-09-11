@@ -6,9 +6,10 @@
 //  Edit this file to retune the device.
 // ===========================================================================
 
-// WiFi credentials + stream URL live in secrets.h (git-ignored).
-// Copy secrets.h.example -> secrets.h and fill it in.
-#include "secrets.h"
+// Audio is played from on-board flash (LittleFS), not streamed — the single-core
+// S2 can't stream over WiFi and decode MP3 smoothly at the same time. Put your
+// MP3s in firmware/data/ and upload them with `pio run -t uploadfs`. No WiFi,
+// no secrets.h needed for the main firmware.
 
 // ---- GPIO pin map (Adafruit ESP32-S2 Feather) -----------------------------
 // Numbers are the raw GPIOs; the Feather silkscreen label is in the comment.
@@ -67,13 +68,15 @@ static const int LED_BRIGHTNESS = 120;  // 0-255
 // ---- Button ----------------------------------------------------------------
 static const unsigned long DEBOUNCE_MS = 40;
 
-// ---- Audio (MAX98357A over I2S, streamed from a URL) -----------------------
-// Two streams (URLs in secrets.h): a looping IDLE_AUDIO_URL while waiting, and
-// AUDIO_URL for the celebration. Volumes are on the 0-21 ESP32-audioI2S scale.
+// ---- Audio (MAX98357A over I2S, played from LittleFS) ----------------------
+// Two files on flash: a looping IDLE_FILE while waiting, and AUDIO_FILE for the
+// celebration. Put both in firmware/data/ and run `pio run -t uploadfs`.
+// Volumes are on the 0-21 ESP32-audioI2S scale.
+static const char* const AUDIO_FILE = "/celebrate.mp3";
+static const char* const IDLE_FILE  = "/idle.mp3";
 static const int  CELEBRATION_VOLUME = 15;
 static const bool ENABLE_IDLE_AUDIO  = true;  // loop an ambient sound while idle
 static const int  IDLE_VOLUME        = 8;     // usually quieter than celebration
-static const unsigned long WIFI_TIMEOUT_MS = 12000;  // connect timeout at boot
 
 // ---- Celebration timing ----------------------------------------------------
 // The show runs at least this long even if the motor finishes early.

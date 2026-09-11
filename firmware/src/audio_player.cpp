@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <WiFi.h>
+#include <LittleFS.h>
 
 #include "Audio.h"  // ESP32-audioI2S (schreibfaul1)
 #include "audio_player.h"
@@ -7,78 +7,57 @@
 
 namespace {
 Audio audio;
-bool wifiOk = false;
+bool fsOk = false;
 
 enum Mode { OFF, IDLE_LOOP, CELEBRATION };
 Mode mode = OFF;
-unsigned long lastConnectMs = 0;
+unsigned long lastStartMs = 0;
 
-// Guard so a momentary isRunning()==false right after connecting doesn't cause
-// us to re-connect the idle stream on top of itself.
-const unsigned long kIdleRestartGuardMs = 1500;
+// Guard so a momentary isRunning()==false right after starting doesn't restart
+// the idle file on top of itself.
+const unsigned long kIdleRestartGuardMs = 800;
 
-void connectIdle() {
-  audio.setVolume(IDLE_VOLUME);
-  audio.connecttohost(IDLE_AUDIO_URL);
-  lastConnectMs = millis();
+void startFile(const char* path, int volume) {
+  audio.setVolume(volume);
+  audio.connecttoFS(LittleFS, path);
+  lastStartMs = millis();
 }
 }  // namespace
 
 void audioplayer::begin() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-
-  Serial.print(F("WiFi connecting"));
-  const unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < WIFI_TIMEOUT_MS) {
-    delay(200);
-    Serial.print('.');
+  fsOk = LittleFS.begin();
+  if (!fsOk) {
+    Serial.println(F("LittleFS mount FAILED — run `pio run -t uploadfs`."));
   }
-  wifiOk = (WiFi.status() == WL_CONNECTED);
-  Serial.println();
-  if (wifiOk) {
-    // Disable WiFi modem power-save — its micro-sleeps stall the audio stream
-    // on the single-core S2 and cause crackle/stutter.
-    WiFi.setSleep(false);
-    Serial.print(F("WiFi OK: "));
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println(F("WiFi FAILED — running without audio."));
-  }
-
   audio.setPinout(PIN_I2S_BCLK, PIN_I2S_LRC, PIN_I2S_DOUT);
-  audio.forceMono(true);   // MAX98357A is mono; halves decode/I2S work on the S2
+  audio.forceMono(true);  // MAX98357A is mono; halves the per-sample work
 }
 
 void audioplayer::playIdle() {
-  if (!wifiOk || !ENABLE_IDLE_AUDIO) {
+  if (!fsOk || !ENABLE_IDLE_AUDIO) {
     mode = OFF;
     return;
   }
   mode = IDLE_LOOP;
-  connectIdle();
+  startFile(IDLE_FILE, IDLE_VOLUME);
 }
 
 void audioplayer::playCelebration() {
-  if (!wifiOk) return;
+  if (!fsOk) return;
   mode = CELEBRATION;
-  audio.setVolume(CELEBRATION_VOLUME);
-  audio.connecttohost(AUDIO_URL);
-  lastConnectMs = millis();
+  startFile(AUDIO_FILE, CELEBRATION_VOLUME);
 }
 
 void audioplayer::update() {
   audio.loop();
 
-  // Loop the idle ambience: if it has run to the end, start it again.
+  // Loop the idle ambience: if it reached the end, play it again.
   if (mode == IDLE_LOOP && !audio.isRunning() &&
-      millis() - lastConnectMs > kIdleRestartGuardMs) {
-    connectIdle();
+      millis() - lastStartMs > kIdleRestartGuardMs) {
+    startFile(IDLE_FILE, IDLE_VOLUME);
   }
 }
 
 bool audioplayer::isCelebrationPlaying() {
   return mode == CELEBRATION && audio.isRunning();
 }
-
-bool audioplayer::wifiConnected() { return wifiOk; }
