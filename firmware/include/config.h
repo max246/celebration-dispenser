@@ -68,12 +68,14 @@ static const int LED_BRIGHTNESS = 120;  // 0-255
 // ---- Button ----------------------------------------------------------------
 static const unsigned long DEBOUNCE_MS = 40;
 
-// ---- Audio (MAX98357A over I2S, played from LittleFS) ----------------------
-// Two files on flash: a looping IDLE_FILE while waiting, and AUDIO_FILE for the
-// celebration. Put both in firmware/data/ and run `pio run -t uploadfs`.
-// Volumes are on the 0-21 ESP32-audioI2S scale.
-static const char* const AUDIO_FILE = "/celebrate.mp3";
-static const char* const IDLE_FILE  = "/idle.mp3";
+// ---- Audio (MAX98357A over I2S, 16-bit WAV preloaded into PSRAM) ------------
+// Two 16-bit PCM WAV files on flash: a looping IDLE_FILE while waiting, and
+// AUDIO_FILE for the celebration. They are loaded into PSRAM at boot and played
+// from RAM (no MP3 decode / no flash reads mid-playback -> clean on the S2).
+// Encode mono, e.g. 22050 Hz: see firmware/data/README.md. Put both in
+// firmware/data/ and run `pio run -t uploadfs`. Volumes are 0-21.
+static const char* const AUDIO_FILE = "/celebrate.wav";
+static const char* const IDLE_FILE  = "/idle.wav";
 static const int  CELEBRATION_VOLUME = 15;
 static const bool ENABLE_IDLE_AUDIO  = true;  // loop an ambient sound while idle
 static const int  IDLE_VOLUME        = 8;     // usually quieter than celebration

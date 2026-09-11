@@ -10,14 +10,14 @@ ESP32-S2 firmware for the Celebration Dispenser, built with
 ```
 firmware/
 ├── platformio.ini            # board + pinned dependencies
-├── data/                     # audio files -> LittleFS (celebrate.mp3, idle.mp3)
+├── data/                     # audio WAVs -> LittleFS (celebrate.wav, idle.wav)
 ├── include/
 │   ├── config.h              # ALL tunables: pins, dispense, stall, LEDs, audio
 │   └── secrets.h.example      # only for the streaming audio *test* (git-ignored)
 └── src/
     ├── main.cpp              # button + celebration state machine
     ├── motor.{h,cpp}         # TMC2209 (UART) + AccelStepper + StallGuard unjam
-    ├── audio_player.{h,cpp}  # LittleFS audio over I2S (MAX98357A)
+    ├── audio_player.{h,cpp}  # raw WAV (preloaded to PSRAM) over I2S (MAX98357A)
     └── lights.{h,cpp}        # non-blocking WS2812 rainbow show
 ```
 
@@ -28,7 +28,7 @@ sounds in [`data/`](data/) and upload them once:
 
 ```bash
 cd firmware
-# put celebrate.mp3 and idle.mp3 in data/  (MP3, <=128 kbps)
+# put celebrate.wav and idle.wav in data/  (16-bit mono WAV — see data/README.md)
 pio run -t uploadfs      # writes data/ to the LittleFS partition
 pio run -t upload        # flash the firmware
 ```
@@ -122,28 +122,27 @@ Two audio tools, both separate envs (wiring is the MAX98357A half of
   ```bash
   pio run -e tonetest -t upload
   ```
-- **`fstest`** — the real audio path: plays a file from flash (LittleFS), no
-  WiFi/motor/button. This is how you verify the on-flash celebration/idle audio
-  in isolation. Put your MP3s in `data/` first.
+- **`wavtest`** — the real audio path: preloads a WAV into PSRAM and plays it
+  from RAM, no WiFi/motor/button. This is how you verify the celebration/idle
+  audio in isolation. Put a `data/idle.wav` first.
   ```bash
-  pio run -e fstest -t uploadfs   # upload data/ audio
-  pio run -e fstest -t upload     # flash + loop /idle.mp3
+  pio run -e wavtest -t upload     # flash + partition table
+  pio run -e wavtest -t uploadfs   # upload data/idle.wav
   ```
-- **`audiotest`** — streams a sample MP3 over WiFi (needs `secrets.h`). This is
-  what demonstrated that **streaming crackles on the single-core S2** — hence
-  the main firmware plays from flash instead. Kept for reference / for an S3.
-  ```bash
-  cp include/secrets.h.example include/secrets.h
-  pio run -e audiotest -t upload
-  ```
+- **`fstest` / `audiotest`** — diagnostic history: `fstest` plays MP3 from flash
+  (decode can't keep up → crackles) and `audiotest` streams MP3 over WiFi
+  (streaming crackles too). These are why the firmware uses raw WAV from PSRAM.
+  Kept for reference / for an S3.
 
 ## Behavior
 
-Audio plays from **on-board flash (LittleFS)**, not streamed — the single-core
-S2 can't stream over WiFi and decode MP3 smoothly at once (a raw I2S tone is
-clean, but streaming crackles). No WiFi is used by the main firmware.
+Audio is **16-bit WAV preloaded into PSRAM** and fed to I2S from RAM — no WiFi,
+no MP3 decode, no flash access during playback. On the single-core S2 that's the
+only path that stays clean (streaming and MP3 decode both crackle once their
+buffer drains; playing raw PCM from RAM does not). Feeding is non-blocking, so
+the motor and LEDs keep running while a sound plays.
 
-While **idle**, `idle.mp3` loops over the amp (at `IDLE_VOLUME`) — set
+While **idle**, `idle.wav` loops over the amp (at `IDLE_VOLUME`) — set
 `ENABLE_IDLE_AUDIO = false` to disable it.
 
 Press the button → one **celebration**, all at once:
@@ -152,7 +151,7 @@ Press the button → one **celebration**, all at once:
   firmware backs off `UNJAM_REVERSE_STEPS` and retries — up to
   `UNJAM_MAX_RETRIES` times before giving up and logging a jam.
 - **Lights:** a rainbow sweeps the WS2812 strip.
-- **Audio:** the idle loop is interrupted and `celebrate.mp3` plays once (at
+- **Audio:** the idle loop is interrupted and `celebrate.wav` plays once (at
   `CELEBRATION_VOLUME`); the idle loop resumes when it ends.
 
 Presses during a celebration are ignored. When idle, the motor is de-energized
@@ -177,11 +176,10 @@ Presses during a celebration are ignored. When idle, the motor is de-energized
 
 ## Notes
 
-- Dependencies (pinned in `platformio.ini`): **AccelStepper**, **Adafruit
-  NeoPixel**, **TMCStepper**, **ESP32-audioI2S** `2.0.6`.
-- The audio library and arduino-esp32 core are a matched pair: this project is
-  on core **2.0.x** (platform `espressif32@6.9.0`) with audio **2.0.6**. The
-  audio **3.x** line requires core 3.x — upgrade both together if you move.
-- The S2 is single-core, so MP3 decoding and software step generation share one
-  CPU. It builds and runs, but if you hear audio stutter under heavy dispensing,
-  lower `STEPPER_MAX_SPEED` or move to an ESP32-S3.
+- Main-firmware dependencies (pinned in `platformio.ini`): **AccelStepper**,
+  **Adafruit NeoPixel**, **TMCStepper**. Audio is raw WAV via the ESP-IDF I2S
+  driver — no MP3 library. Platform is `espressif32@6.9.0` (arduino-esp32 2.0.x).
+  The `audiotest`/`fstest` diagnostic envs still pull **ESP32-audioI2S** `2.0.6`.
+- The S2 is single-core, so audio, step generation, and the LEDs share one CPU.
+  Audio is fed non-blocking from PSRAM, so it coexists fine; if you ever hear a
+  hiccup under very fast dispensing, lower `STEPPER_MAX_SPEED`.

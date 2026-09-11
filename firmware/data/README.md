@@ -1,41 +1,46 @@
 # Audio files (LittleFS)
 
-Put the dispenser's sounds here, then upload them to the board's flash:
+Put the dispenser's sounds here as **WAV**, then upload them to the board's flash:
 
 ```bash
 cd firmware
+# make mono 16-bit WAVs (see Encoding below), e.g.:
+#   ffmpeg -i celebrate.mp3 -map_metadata -1 -ar 22050 -ac 1 -c:a pcm_s16le celebrate.wav
+#   ffmpeg -i idle.mp3      -map_metadata -1 -ar 22050 -ac 1 -c:a pcm_s16le -t 30 idle.wav
 pio run -t uploadfs      # writes this folder to the LittleFS partition
 ```
 
-Expected files (names set in [`../include/config.h`](../include/config.h)):
+Expected files — **16-bit PCM WAV** (names set in
+[`../include/config.h`](../include/config.h)). WAV is used, not MP3: the files
+are preloaded into PSRAM and played from RAM, so there's no decode and no flash
+access mid-playback — the only path that stays clean on the single-core S2.
 
 | File          | Played when            |
 |---------------|------------------------|
-| `celebrate.mp3` | on each button press (`AUDIO_FILE`) |
-| `idle.mp3`      | looped while idle (`IDLE_FILE`)     |
+| `celebrate.wav` | on each button press (`AUDIO_FILE`) |
+| `idle.wav`      | looped while idle (`IDLE_FILE`)     |
 
-## Encoding (important for the single-core S2)
+## Encoding
 
-The S2 has one CPU core, so MP3 decode at 44.1 kHz can't quite keep up with
-real-time — it plays a few seconds (the buffer), then crackles. Encode for a
-light decode load:
+Use **16-bit PCM WAV, mono**. MP3 was tried and dropped — decoding can't keep up
+in real-time on the single-core S2 (it crackles once the buffer drains), whereas
+raw PCM from PSRAM has zero decode cost and stays clean. Convert with:
 
-- **22050 Hz, mono, CBR, no metadata** — halves the decode work vs 44.1 kHz:
-  ```bash
-  ffmpeg -i in.mp3 -map_metadata -1 -c:a libmp3lame -ar 22050 -b:a 96k -ac 1 idle.mp3
-  ```
-  (`-map_metadata -1` strips ID3/Xing headers, which can also stop it decoding.)
-- **Still crackling? Use WAV** — raw PCM has *zero* decode cost, so it always
-  plays clean on the S2:
-  ```bash
-  ffmpeg -i in.mp3 -map_metadata -1 -ar 22050 -ac 1 -c:a pcm_s16le idle.wav
-  ```
-  (then set the file names in `../include/config.h` to `.wav`.)
+```bash
+ffmpeg -i in.mp3 -map_metadata -1 -ar 22050 -ac 1 -c:a pcm_s16le out.wav
+```
+
+- `-ar 22050` — good quality, half the data of 44.1 kHz (lower to `16000` /
+  `11025` for longer clips)
+- `-ac 1` — mono (the MAX98357A is mono anyway)
+- `-map_metadata -1` — strip tags
 
 ## Size
 
-- The LittleFS partition is **~2 MB** (see `../partitions_audio.csv`). MP3 at
-  96 kbps ≈ 12 KB/s (~2.7 min); 22 kHz mono WAV ≈ 44 KB/s (~45 s). Keep both
-  files under 2 MB combined; shorten the idle loop if needed.
+WAV is uncompressed, and the LittleFS partition is **~2 MB** (see
+`../partitions_audio.csv`). At 22050 Hz mono that's ~44 KB/s, so ~**45 s total**
+across both files — trim the idle loop (`-t 30`) or drop the sample rate if you
+need more. Each clip is also loaded whole into PSRAM at boot, so both must fit in
+the ~2 MB of PSRAM too (they will, if they fit the partition).
 - The `.mp3` files are git-ignored (they can be large / personal); only this
   README is tracked.
