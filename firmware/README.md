@@ -122,6 +122,13 @@ Two audio tools, both separate envs (wiring is the MAX98357A half of
   ```bash
   pio run -e tonetest -t upload
   ```
+- **`fstest`** — the real audio path: plays a file from flash (LittleFS), no
+  WiFi/motor/button. This is how you verify the on-flash celebration/idle audio
+  in isolation. Put your MP3s in `data/` first.
+  ```bash
+  pio run -e fstest -t uploadfs   # upload data/ audio
+  pio run -e fstest -t upload     # flash + loop /idle.mp3
+  ```
 - **`audiotest`** — streams a sample MP3 over WiFi (needs `secrets.h`). This is
   what demonstrated that **streaming crackles on the single-core S2** — hence
   the main firmware plays from flash instead. Kept for reference / for an S3.
