@@ -44,7 +44,7 @@ static const long STEPS_PER_REV = 200;     // 1.8°/step NEMA 17 = 200 full step
 // The motor turns GEAR_RATIO times for one wheel revolution.
 static const float GEAR_RATIO   = 36.0f / 12.0f;
 static const float DISPENSE_REVS = 1.0f;   // WHEEL (output) revolutions per celebration
-static const bool  DISPENSE_CW   = true;   // false to reverse
+static const bool  DISPENSE_CW   = false;   // false to reverse
 // Dispense at the speed StallGuard was tuned at — SG_RESULT is speed-specific,
 // so changing this means re-checking STALL_THRESHOLD with `motortest`.
 static const float STEPPER_MAX_SPEED = 1000.0f;  // microsteps/sec

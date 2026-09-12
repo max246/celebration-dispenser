@@ -29,7 +29,7 @@ static const int  MICROSTEPPING = 16;
 static const long STEPS_PER_REV = 200;
 static const float GEAR_RATIO = 36.0f / 12.0f;   // 12T -> 36T
 static const float DISPENSE_REVS = 1.0f;         // WHEEL revolutions per dispense
-static const bool  DISPENSE_CW = true;
+static const bool  DISPENSE_CW = false;
 // Dispense at the SAME speed StallGuard was tuned at (SG_RESULT is speed-specific).
 static const float STEPPER_MAX_SPEED = 1000.0f;
 static const float STEPPER_ACCEL = 3200.0f;
