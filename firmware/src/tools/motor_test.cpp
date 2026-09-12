@@ -1,20 +1,16 @@
 // ===========================================================================
 //  Motor bench test — Celebration Dispenser
 //
-//  Standalone TMC2209 + NEMA 17 bring-up. Independent of the main firmware:
-//  no WiFi, no audio, no secrets.h needed. Build/flash with:
+//  Standalone TMC2209 + NEMA 17 bring-up that exercises the real DISPENSE +
+//  AUTO-UNJAM behaviour: it drives forward one dispense amount; if StallGuard
+//  trips mid-move (jam), it backs off and retries forward, up to a limit; then
+//  it pauses and dispenses again. Grab/hold the wheel to trigger the unjam.
+//  Independent of the main firmware: no WiFi, no audio, no secrets.h.
 //
 //      pio run -e motortest -t upload
 //      pio device monitor -e motortest
 //
-//  What it does:
-//   1. Opens UART to the TMC2209 and prints its version (0x21 = link OK).
-//   2. Configures current / microstepping / StallGuard.
-//   3. Continuously jogs the wheel +1 then -1 output revolution.
-//   4. Every 250 ms prints speed, the DIAG pin, and the live StallGuard load
-//      (SG_RESULT) so you can tune STALL_THRESHOLD and confirm the auto-unjam.
-//
-//  Pins/values below MUST match firmware/include/config.h.
+//  Values below MUST match firmware/include/config.h.
 // ===========================================================================
 #include <AccelStepper.h>
 #include <Arduino.h>
@@ -32,28 +28,75 @@ static const int  MOTOR_CURRENT_MA = 600;
 static const int  MICROSTEPPING = 16;
 static const long STEPS_PER_REV = 200;
 static const float GEAR_RATIO = 36.0f / 12.0f;   // 12T -> 36T
-static const uint8_t STALL_THRESHOLD = 50;  // DIAG trips at SG_RESULT <= 2x this (=100)
+static const float DISPENSE_REVS = 1.0f;         // WHEEL revolutions per dispense
+static const bool  DISPENSE_CW = true;
 static const float STEPPER_MAX_SPEED = 1600.0f;
 static const float STEPPER_ACCEL = 3200.0f;
 
-// Constant speed used for tuning (microsteps/sec). StallGuard/SG_RESULT is only
-// meaningful at a steady speed, so this test spins continuously (no jog ramps).
-static const float TUNE_SPEED = 1000.0f;
-static const bool  SPIN_CW = true;  // direction
+// ---- stall / auto-unjam (match config.h) ----
+static const uint8_t STALL_THRESHOLD = 50;       // DIAG trips at SG_RESULT <= 2x this
+static const unsigned long STALL_IGNORE_MS = 120;
+static const float STALL_MIN_SPEED = 300.0f;
+static const long  UNJAM_REVERSE_STEPS = (long)(0.25f * STEPS_PER_REV * MICROSTEPPING);
+static const int   UNJAM_MAX_RETRIES = 3;
+
+// how long to wait between dispenses in this test loop
+static const unsigned long DISPENSE_INTERVAL_MS = 3000;
 
 HardwareSerial& tmcSerial = Serial1;
 TMC2209Stepper driver(&tmcSerial, TMC_RSENSE, TMC_ADDRESS);
 AccelStepper stepper(AccelStepper::DRIVER, PIN_STEP, PIN_DIR);
+
+enum Phase { WAITING, DISPENSING, UNJAM_REVERSE };
+Phase phase = WAITING;
+long dispenseTarget = 0;
+int retries = 0;
+unsigned long moveStartMs = 0;
+unsigned long waitStartMs = 0;
+
+static void enableDriver(bool on) { digitalWrite(PIN_EN, on ? LOW : HIGH); }
+
+static long dispenseSteps() {
+  const long s = (long)(DISPENSE_REVS * GEAR_RATIO * STEPS_PER_REV * MICROSTEPPING);
+  return DISPENSE_CW ? s : -s;
+}
+
+// stall counts only past the accel window and above a minimum speed
+static bool stallDetected() {
+  if (millis() - moveStartMs < STALL_IGNORE_MS) return false;
+  if (fabs(stepper.speed()) < STALL_MIN_SPEED) return false;
+  return digitalRead(PIN_DIAG) == HIGH;
+}
+
+static void startDispense() {
+  retries = 0;
+  enableDriver(true);
+  stepper.setCurrentPosition(0);
+  dispenseTarget = dispenseSteps();
+  stepper.moveTo(dispenseTarget);
+  phase = DISPENSING;
+  moveStartMs = millis();
+  Serial.println(F("-> dispensing"));
+}
+
+static void beginUnjam() {
+  Serial.printf("!! jam (SG=%u) -> back off, retry %d/%d\n", driver.SG_RESULT(),
+                retries + 1, UNJAM_MAX_RETRIES);
+  const long back = DISPENSE_CW ? -UNJAM_REVERSE_STEPS : UNJAM_REVERSE_STEPS;
+  stepper.move(back);         // reverse relative to current position
+  phase = UNJAM_REVERSE;
+  moveStartMs = millis();
+}
 
 void setup() {
   Serial.begin(115200);
   // Wait for the USB serial monitor to attach (or 8s) so boot prints aren't missed.
   for (unsigned long _t = millis(); !Serial && millis() - _t < 8000;) delay(10);
   delay(300);
-  Serial.println(F("\n=== Celebration Dispenser — motor bench test ==="));
+  Serial.println(F("\n=== Celebration Dispenser — dispense + auto-unjam test ==="));
 
   pinMode(PIN_EN, OUTPUT);
-  digitalWrite(PIN_EN, LOW);   // enable driver (active LOW)
+  enableDriver(false);
   pinMode(PIN_DIAG, INPUT);
 
   tmcSerial.begin(TMC_BAUD, SERIAL_8N1, PIN_TMC_RX, PIN_TMC_TX);
@@ -68,32 +111,51 @@ void setup() {
   driver.SGTHRS(STALL_THRESHOLD);
 
   const uint8_t ver = driver.version();
-  Serial.print(F("TMC2209 version: 0x"));
-  Serial.println(ver, HEX);
-  if (ver != 0x21) {
-    Serial.println(F("!! UART link not confirmed (expected 0x21)."));
-    Serial.println(F("   Check TX->PDN via 1k, RX->PDN, common GND, VIO=3V3."));
-  }
+  Serial.printf("TMC2209 version: 0x%02X%s\n", ver,
+                ver == 0x21 ? " (UART OK)" : " (!! check TX/1k, RX, GND, VIO)");
 
   stepper.setMaxSpeed(STEPPER_MAX_SPEED);
-  stepper.setEnablePin(-1);          // we drive EN ourselves
-  stepper.setSpeed(SPIN_CW ? TUNE_SPEED : -TUNE_SPEED);  // constant speed
+  stepper.setAcceleration(STEPPER_ACCEL);
+  stepper.setEnablePin(-1);
 
-  Serial.println(F("Spinning at constant speed. Load/hold the wheel and watch"));
-  Serial.println(F("SG_RESULT drop toward 0 (and DIAG go to 1)."));
+  Serial.println(F("Dispensing every 3 s. Grab the wheel to trigger an unjam."));
+  waitStartMs = millis();
 }
 
 void loop() {
-  stepper.runSpeed();  // steady speed -> steady SG_RESULT
+  switch (phase) {
+    case WAITING:
+      if (millis() - waitStartMs >= DISPENSE_INTERVAL_MS) startDispense();
+      break;
 
-  static unsigned long last = 0;
-  if (millis() - last >= 250) {
-    last = millis();
-    Serial.print(F("speed="));
-    Serial.print(stepper.speed(), 0);
-    Serial.print(F("  DIAG="));
-    Serial.print(digitalRead(PIN_DIAG));
-    Serial.print(F("  SG_RESULT="));
-    Serial.println(driver.SG_RESULT());   // lower = more load; 0 near stall
+    case DISPENSING:
+      stepper.run();
+      if (stallDetected()) {
+        beginUnjam();
+      } else if (stepper.distanceToGo() == 0) {
+        Serial.println(F("-> done"));
+        enableDriver(false);
+        phase = WAITING;
+        waitStartMs = millis();
+      }
+      break;
+
+    case UNJAM_REVERSE:
+      stepper.run();
+      if (stepper.distanceToGo() == 0) {
+        if (retries < UNJAM_MAX_RETRIES) {
+          retries++;
+          stepper.moveTo(dispenseTarget);   // resume toward the original target
+          phase = DISPENSING;
+          moveStartMs = millis();
+          Serial.println(F("-> retry forward"));
+        } else {
+          Serial.println(F("!! still jammed after max retries — giving up"));
+          enableDriver(false);
+          phase = WAITING;
+          waitStartMs = millis();
+        }
+      }
+      break;
   }
 }
