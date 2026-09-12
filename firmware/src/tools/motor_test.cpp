@@ -35,10 +35,14 @@ static const float STEPPER_MAX_SPEED = 1000.0f;
 static const float STEPPER_ACCEL = 3200.0f;
 
 // ---- stall / auto-unjam (match config.h) ----
-static const uint8_t STALL_THRESHOLD = 50;       // DIAG trips at SG_RESULT <= 2x this
+// Detection reads SG_RESULT over UART (the DIAG pin didn't assert reliably on
+// this driver). Free-running SG_RESULT is ~150+; a stall drops it toward 0.
+static const uint8_t STALL_THRESHOLD = 50;       // SGTHRS (driver config)
+static const uint16_t SG_STALL_LEVEL = 70;       // stall when SG_RESULT below this
+static const int      SG_STALL_CONFIRM = 2;      // consecutive low reads to confirm
+static const unsigned long SG_POLL_MS = 30;      // how often to read SG_RESULT
 static const unsigned long STALL_IGNORE_MS = 120;
-// Only check for a stall at cruise speed — StallGuard is invalid while the motor
-// accelerates/decelerates. 0.9x max means "at full speed".
+// Only check at cruise speed — StallGuard is invalid during accel/decel.
 static const float STALL_MIN_SPEED = 0.9f * STEPPER_MAX_SPEED;
 static const long  UNJAM_REVERSE_STEPS = (long)(0.25f * STEPS_PER_REV * MICROSTEPPING);
 static const int   UNJAM_MAX_RETRIES = 3;
@@ -56,6 +60,8 @@ long dispenseTarget = 0;
 int retries = 0;
 unsigned long moveStartMs = 0;
 unsigned long waitStartMs = 0;
+int sgLowCount = 0;
+unsigned long lastSgPollMs = 0;
 
 static void enableDriver(bool on) { digitalWrite(PIN_EN, on ? LOW : HIGH); }
 
@@ -64,11 +70,19 @@ static long dispenseSteps() {
   return DISPENSE_CW ? s : -s;
 }
 
-// stall counts only past the accel window and above a minimum speed
+// Stall via SG_RESULT (polled over UART). Valid only at cruise speed and past
+// the accel window; needs SG_STALL_CONFIRM consecutive low reads to fire.
 static bool stallDetected() {
-  if (millis() - moveStartMs < STALL_IGNORE_MS) return false;
-  if (fabs(stepper.speed()) < STALL_MIN_SPEED) return false;
-  return digitalRead(PIN_DIAG) == HIGH;
+  if (millis() - moveStartMs < STALL_IGNORE_MS) { sgLowCount = 0; return false; }
+  if (fabs(stepper.speed()) < STALL_MIN_SPEED) { sgLowCount = 0; return false; }
+  if (millis() - lastSgPollMs < SG_POLL_MS) return false;
+  lastSgPollMs = millis();
+  if (driver.SG_RESULT() < SG_STALL_LEVEL) {
+    if (++sgLowCount >= SG_STALL_CONFIRM) { sgLowCount = 0; return true; }
+  } else {
+    sgLowCount = 0;
+  }
+  return false;
 }
 
 static void startDispense() {
@@ -131,9 +145,9 @@ void loop() {
   static unsigned long lastDbg = 0;
   if (phase != WAITING && millis() - lastDbg >= 200) {
     lastDbg = millis();
-    Serial.printf("   [dbg] SG=%u DIAG=%d dist=%ld spd=%.0f checking=%d\n",
-                  driver.SG_RESULT(), digitalRead(PIN_DIAG),
-                  stepper.distanceToGo(), stepper.speed(), stallDetected());
+    Serial.printf("   [dbg] SG=%u dist=%ld spd=%.0f lowcnt=%d\n",
+                  driver.SG_RESULT(), stepper.distanceToGo(), stepper.speed(),
+                  sgLowCount);
   }
 
   switch (phase) {

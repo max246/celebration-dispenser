@@ -52,13 +52,15 @@ static const float STEPPER_ACCEL     = 3200.0f;  // microsteps/sec^2
 // Release holding torque when idle? false = motor free-spins, silent, cooler.
 static const bool  HOLD_TORQUE_WHEN_IDLE = false;
 
-// ---- Stall detection / auto-unjam (StallGuard via DIAG pin) ----------------
-// DIAG trips when SG_RESULT <= STALL_THRESHOLD*2. Set it below your free-running
-// SG_RESULT (measure with `motortest`). Measured free ~150-205 -> 50 trips at
-// 100, clear of normal running but catches a jam. Higher = trips more easily.
-static const uint8_t STALL_THRESHOLD    = 50;
-// Only evaluate a stall at cruise speed — StallGuard is invalid while the motor
-// accelerates/decelerates. 0.9x max speed means "at full speed".
+// ---- Stall detection / auto-unjam (StallGuard via SG_RESULT over UART) ------
+// The DIAG pin didn't assert on this driver, so stalls are detected by reading
+// SG_RESULT directly: free-running is high (~200 measured), a stall drops it
+// toward 0. STALL_THRESHOLD is still written to the driver's SGTHRS register.
+static const uint8_t  STALL_THRESHOLD  = 50;   // SGTHRS (driver register)
+static const uint16_t SG_STALL_LEVEL   = 70;   // stall when SG_RESULT below this
+static const int      SG_STALL_CONFIRM = 2;    // consecutive low reads to confirm
+static const unsigned long SG_POLL_MS  = 30;   // how often to read SG_RESULT
+// Only evaluate a stall at cruise speed — StallGuard is invalid during accel.
 static const unsigned long STALL_IGNORE_MS = 120;
 static const float STALL_MIN_SPEED         = 0.9f * STEPPER_MAX_SPEED;
 // On a jam: back off this many microsteps, then retry the dispense.

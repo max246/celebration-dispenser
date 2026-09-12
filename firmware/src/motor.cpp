@@ -19,6 +19,8 @@ long dispenseTarget = 0;
 int retries = 0;
 bool jammed = false;
 unsigned long moveStartMs = 0;
+int sgLowCount = 0;
+unsigned long lastSgPollMs = 0;
 
 void enableDriver(bool on) {
   // TMC2209 EN is active LOW.
@@ -33,12 +35,20 @@ long dispenseSteps() {
   return DISPENSE_CW ? steps : -steps;
 }
 
-// A stall counts only once we're past the acceleration ramp and moving fast
-// enough for StallGuard to be valid.
+// Stall via SG_RESULT polled over UART (the DIAG pin didn't assert reliably).
+// Valid only at cruise speed and past the accel window; needs SG_STALL_CONFIRM
+// consecutive low reads to fire.
 bool stallDetected() {
-  if (millis() - moveStartMs < STALL_IGNORE_MS) return false;
-  if (fabs(stepper.speed()) < STALL_MIN_SPEED) return false;
-  return digitalRead(PIN_DIAG) == HIGH;
+  if (millis() - moveStartMs < STALL_IGNORE_MS) { sgLowCount = 0; return false; }
+  if (fabs(stepper.speed()) < STALL_MIN_SPEED) { sgLowCount = 0; return false; }
+  if (millis() - lastSgPollMs < SG_POLL_MS) return false;
+  lastSgPollMs = millis();
+  if (driver.SG_RESULT() < SG_STALL_LEVEL) {
+    if (++sgLowCount >= SG_STALL_CONFIRM) { sgLowCount = 0; return true; }
+  } else {
+    sgLowCount = 0;
+  }
+  return false;
 }
 
 void beginUnjam() {
