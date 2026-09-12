@@ -34,7 +34,7 @@ static const int PIN_I2S_DOUT = 37;  // "MI"  -> MAX98357A DIN
 static const float TMC_RSENSE   = 0.11f;   // sense resistor on most 2209 modules
 static const uint8_t TMC_ADDRESS = 0b00;   // set by MS1/MS2 (both to GND = 0)
 static const uint32_t TMC_BAUD  = 115200;  // UART baud to the driver
-static const int  MOTOR_CURRENT_MA = 840;  // +40% from 600 for more torque
+static const int  MOTOR_CURRENT_MA = 1000; // raise toward motor rating; watch heat
 static const int  MICROSTEPPING    = 16;   // driver microsteps (set over UART)
 static const bool USE_STEALTHCHOP  = true; // quiet mode (StallGuard4 still works)
 
