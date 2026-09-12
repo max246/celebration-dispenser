@@ -6,10 +6,10 @@
 //  Edit this file to retune the device.
 // ===========================================================================
 
-// Audio is played from on-board flash (LittleFS), not streamed — the single-core
-// S2 can't stream over WiFi and decode MP3 smoothly at the same time. Put your
-// MP3s in firmware/data/ and upload them with `pio run -t uploadfs`. No WiFi,
-// no secrets.h needed for the main firmware.
+// Audio is 16-bit WAV preloaded into PSRAM and played from RAM (not streamed,
+// not MP3) — the only path that stays clean on the single-core S2. Put your WAVs
+// in firmware/data/ and upload them with `pio run -t uploadfs`. No WiFi, no
+// secrets.h needed for the main firmware.
 
 // ---- GPIO pin map (Adafruit ESP32-S2 Feather) -----------------------------
 // Numbers are the raw GPIOs; the Feather silkscreen label is in the comment.
@@ -51,8 +51,10 @@ static const float STEPPER_ACCEL     = 3200.0f;  // microsteps/sec^2
 static const bool  HOLD_TORQUE_WHEN_IDLE = false;
 
 // ---- Stall detection / auto-unjam (StallGuard via DIAG pin) ----------------
-// SGTHRS: higher = trips more easily. Tune per motor/load (0-255). Start ~60-90.
-static const uint8_t STALL_THRESHOLD    = 80;
+// DIAG trips when SG_RESULT <= STALL_THRESHOLD*2. Set it below your free-running
+// SG_RESULT (measure with `motortest`). Measured free ~150-205 -> 50 trips at
+// 100, clear of normal running but catches a jam. Higher = trips more easily.
+static const uint8_t STALL_THRESHOLD    = 50;
 // Ignore stalls for this long after a move starts (StallGuard is invalid during
 // initial acceleration / below a minimum speed).
 static const unsigned long STALL_IGNORE_MS = 120;

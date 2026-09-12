@@ -32,7 +32,7 @@ static const int  MOTOR_CURRENT_MA = 600;
 static const int  MICROSTEPPING = 16;
 static const long STEPS_PER_REV = 200;
 static const float GEAR_RATIO = 36.0f / 12.0f;   // 12T -> 36T
-static const uint8_t STALL_THRESHOLD = 80;
+static const uint8_t STALL_THRESHOLD = 50;  // DIAG trips at SG_RESULT <= 2x this (=100)
 static const float STEPPER_MAX_SPEED = 1600.0f;
 static const float STEPPER_ACCEL = 3200.0f;
 
