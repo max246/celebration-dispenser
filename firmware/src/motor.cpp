@@ -50,6 +50,7 @@ void beginUnjam() {
   // Reverse relative to the current position, opposite the dispense direction.
   const long back = DISPENSE_CW ? -UNJAM_REVERSE_STEPS : UNJAM_REVERSE_STEPS;
   stepper.move(back);
+  stepper.setSpeed(STEPPER_MAX_SPEED);  // constant speed (StallGuard needs steady timing)
   phase = UNJAM_REVERSE;
   moveStartMs = millis();
 }
@@ -78,8 +79,9 @@ void motor::begin() {
   driver.SGTHRS(STALL_THRESHOLD);            // stall sensitivity -> DIAG output
 
   stepper.setMaxSpeed(STEPPER_MAX_SPEED);
-  stepper.setAcceleration(STEPPER_ACCEL);
   stepper.setEnablePin(-1);  // we manage EN ourselves
+  // Constant-speed motion (runSpeedToPosition), not accelerated — StallGuard
+  // needs steady step timing, and it's tuned at this one speed.
 
   Serial.print(F("TMC2209 version: 0x"));
   Serial.println(driver.version(), HEX);  // 0x21 when the UART link is good
@@ -92,6 +94,7 @@ void motor::dispense() {
   stepper.setCurrentPosition(0);
   dispenseTarget = dispenseSteps();
   stepper.moveTo(dispenseTarget);
+  stepper.setSpeed(STEPPER_MAX_SPEED);  // after moveTo — constant-speed motion
   phase = DISPENSING;
   moveStartMs = millis();
 }
@@ -102,7 +105,7 @@ void motor::update() {
       break;
 
     case DISPENSING:
-      stepper.run();
+      stepper.runSpeedToPosition();
       if (stallDetected()) {
         beginUnjam();
       } else if (stepper.distanceToGo() == 0) {
@@ -111,11 +114,12 @@ void motor::update() {
       break;
 
     case UNJAM_REVERSE:
-      stepper.run();
+      stepper.runSpeedToPosition();
       if (stepper.distanceToGo() == 0) {
         if (retries < UNJAM_MAX_RETRIES) {
           retries++;
           stepper.moveTo(dispenseTarget);  // resume toward the original target
+          stepper.setSpeed(STEPPER_MAX_SPEED);
           phase = DISPENSING;
           moveStartMs = millis();
         } else {

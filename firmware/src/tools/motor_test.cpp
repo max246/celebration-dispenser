@@ -77,6 +77,7 @@ static void startDispense() {
   stepper.setCurrentPosition(0);
   dispenseTarget = dispenseSteps();
   stepper.moveTo(dispenseTarget);
+  stepper.setSpeed(STEPPER_MAX_SPEED);  // after moveTo — constant-speed motion
   phase = DISPENSING;
   moveStartMs = millis();
   Serial.println(F("-> dispensing"));
@@ -87,6 +88,7 @@ static void beginUnjam() {
                 retries + 1, UNJAM_MAX_RETRIES);
   const long back = DISPENSE_CW ? -UNJAM_REVERSE_STEPS : UNJAM_REVERSE_STEPS;
   stepper.move(back);         // reverse relative to current position
+  stepper.setSpeed(STEPPER_MAX_SPEED);
   phase = UNJAM_REVERSE;
   moveStartMs = millis();
 }
@@ -118,7 +120,6 @@ void setup() {
                 ver == 0x21 ? " (UART OK)" : " (!! check TX/1k, RX, GND, VIO)");
 
   stepper.setMaxSpeed(STEPPER_MAX_SPEED);
-  stepper.setAcceleration(STEPPER_ACCEL);
   stepper.setEnablePin(-1);
 
   Serial.println(F("Dispensing every 3 s. Grab the wheel to trigger an unjam."));
@@ -132,7 +133,7 @@ void loop() {
       break;
 
     case DISPENSING:
-      stepper.run();
+      stepper.runSpeedToPosition();
       if (stallDetected()) {
         beginUnjam();
       } else if (stepper.distanceToGo() == 0) {
@@ -144,11 +145,12 @@ void loop() {
       break;
 
     case UNJAM_REVERSE:
-      stepper.run();
+      stepper.runSpeedToPosition();
       if (stepper.distanceToGo() == 0) {
         if (retries < UNJAM_MAX_RETRIES) {
           retries++;
           stepper.moveTo(dispenseTarget);   // resume toward the original target
+          stepper.setSpeed(STEPPER_MAX_SPEED);
           phase = DISPENSING;
           moveStartMs = millis();
           Serial.println(F("-> retry forward"));
