@@ -132,6 +132,9 @@ void setup() {
   const uint8_t ver = driver.version();
   Serial.printf("TMC2209 version: 0x%02X%s\n", ver,
                 ver == 0x21 ? " (UART OK)" : " (!! check TX/1k, RX, GND, VIO)");
+  // read the current back from the driver to confirm the setting applied
+  Serial.printf("coil current set=%d mA, readback=%u mA (CS=%u)\n",
+                MOTOR_CURRENT_MA, driver.rms_current(), driver.cs_actual());
 
   stepper.setMaxSpeed(STEPPER_MAX_SPEED);
   stepper.setEnablePin(-1);
