@@ -127,6 +127,15 @@ void setup() {
 }
 
 void loop() {
+  // live diagnostics while moving — watch SG/DIAG when you hold the wheel
+  static unsigned long lastDbg = 0;
+  if (phase != WAITING && millis() - lastDbg >= 200) {
+    lastDbg = millis();
+    Serial.printf("   [dbg] SG=%u DIAG=%d dist=%ld spd=%.0f checking=%d\n",
+                  driver.SG_RESULT(), digitalRead(PIN_DIAG),
+                  stepper.distanceToGo(), stepper.speed(), stallDetected());
+  }
+
   switch (phase) {
     case WAITING:
       if (millis() - waitStartMs >= DISPENSE_INTERVAL_MS) startDispense();
