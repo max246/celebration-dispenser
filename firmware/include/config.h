@@ -45,7 +45,9 @@ static const long STEPS_PER_REV = 200;     // 1.8°/step NEMA 17 = 200 full step
 static const float GEAR_RATIO   = 36.0f / 12.0f;
 static const float DISPENSE_REVS = 1.0f;   // WHEEL (output) revolutions per celebration
 static const bool  DISPENSE_CW   = true;   // false to reverse
-static const float STEPPER_MAX_SPEED = 1600.0f;  // microsteps/sec
+// Dispense at the speed StallGuard was tuned at — SG_RESULT is speed-specific,
+// so changing this means re-checking STALL_THRESHOLD with `motortest`.
+static const float STEPPER_MAX_SPEED = 1000.0f;  // microsteps/sec
 static const float STEPPER_ACCEL     = 3200.0f;  // microsteps/sec^2
 // Release holding torque when idle? false = motor free-spins, silent, cooler.
 static const bool  HOLD_TORQUE_WHEN_IDLE = false;
@@ -55,10 +57,10 @@ static const bool  HOLD_TORQUE_WHEN_IDLE = false;
 // SG_RESULT (measure with `motortest`). Measured free ~150-205 -> 50 trips at
 // 100, clear of normal running but catches a jam. Higher = trips more easily.
 static const uint8_t STALL_THRESHOLD    = 50;
-// Ignore stalls for this long after a move starts (StallGuard is invalid during
-// initial acceleration / below a minimum speed).
+// Only evaluate a stall at cruise speed — StallGuard is invalid while the motor
+// accelerates/decelerates. 0.9x max speed means "at full speed".
 static const unsigned long STALL_IGNORE_MS = 120;
-static const float STALL_MIN_SPEED         = 300.0f;  // microsteps/sec
+static const float STALL_MIN_SPEED         = 0.9f * STEPPER_MAX_SPEED;
 // On a jam: back off this many microsteps, then retry the dispense.
 static const long UNJAM_REVERSE_STEPS = (long)(0.25f * STEPS_PER_REV * MICROSTEPPING);
 static const int  UNJAM_MAX_RETRIES   = 3;  // give up (and log) after this many

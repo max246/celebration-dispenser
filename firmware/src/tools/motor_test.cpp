@@ -30,13 +30,16 @@ static const long STEPS_PER_REV = 200;
 static const float GEAR_RATIO = 36.0f / 12.0f;   // 12T -> 36T
 static const float DISPENSE_REVS = 1.0f;         // WHEEL revolutions per dispense
 static const bool  DISPENSE_CW = true;
-static const float STEPPER_MAX_SPEED = 1600.0f;
+// Dispense at the SAME speed StallGuard was tuned at (SG_RESULT is speed-specific).
+static const float STEPPER_MAX_SPEED = 1000.0f;
 static const float STEPPER_ACCEL = 3200.0f;
 
 // ---- stall / auto-unjam (match config.h) ----
 static const uint8_t STALL_THRESHOLD = 50;       // DIAG trips at SG_RESULT <= 2x this
 static const unsigned long STALL_IGNORE_MS = 120;
-static const float STALL_MIN_SPEED = 300.0f;
+// Only check for a stall at cruise speed — StallGuard is invalid while the motor
+// accelerates/decelerates. 0.9x max means "at full speed".
+static const float STALL_MIN_SPEED = 0.9f * STEPPER_MAX_SPEED;
 static const long  UNJAM_REVERSE_STEPS = (long)(0.25f * STEPS_PER_REV * MICROSTEPPING);
 static const int   UNJAM_MAX_RETRIES = 3;
 
