@@ -49,7 +49,7 @@ static const bool  DISPENSE_CW   = false;   // false to reverse
 static const unsigned long DISPENSE_TIMEOUT_MS = 10000;
 // Dispense at the speed StallGuard was tuned at — SG_RESULT is speed-specific,
 // so changing this means re-checking STALL_THRESHOLD with `motortest`.
-static const float STEPPER_MAX_SPEED = 2000.0f;  // microsteps/sec (re-tune stall after changing)
+static const float STEPPER_MAX_SPEED = 4000.0f;  // AccelStepper software ceiling; watch startup slip + re-tune stall
 static const float STEPPER_ACCEL     = 3200.0f;  // microsteps/sec^2
 // Release holding torque when idle? false = motor free-spins, silent, cooler.
 static const bool  HOLD_TORQUE_WHEN_IDLE = false;

@@ -31,7 +31,7 @@ static const float GEAR_RATIO = 36.0f / 12.0f;   // 12T -> 36T
 static const float DISPENSE_REVS = 1.0f;         // WHEEL revolutions per dispense
 static const bool  DISPENSE_CW = false;
 // Dispense at the SAME speed StallGuard was tuned at (SG_RESULT is speed-specific).
-static const float STEPPER_MAX_SPEED = 2000.0f;
+static const float STEPPER_MAX_SPEED = 4000.0f;
 static const float STEPPER_ACCEL = 3200.0f;
 
 // ---- stall / auto-unjam (match config.h) ----
