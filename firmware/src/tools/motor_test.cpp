@@ -36,16 +36,14 @@ static const uint8_t STALL_THRESHOLD = 80;
 static const float STEPPER_MAX_SPEED = 1600.0f;
 static const float STEPPER_ACCEL = 3200.0f;
 
-// How much to jog each way, in WHEEL revolutions.
-static const float JOG_REVS = 1.0f;
+// Constant speed used for tuning (microsteps/sec). StallGuard/SG_RESULT is only
+// meaningful at a steady speed, so this test spins continuously (no jog ramps).
+static const float TUNE_SPEED = 1000.0f;
+static const bool  SPIN_CW = true;  // direction
 
 HardwareSerial& tmcSerial = Serial1;
 TMC2209Stepper driver(&tmcSerial, TMC_RSENSE, TMC_ADDRESS);
 AccelStepper stepper(AccelStepper::DRIVER, PIN_STEP, PIN_DIR);
-
-static long jogSteps() {
-  return (long)(JOG_REVS * GEAR_RATIO * STEPS_PER_REV * MICROSTEPPING);
-}
 
 void setup() {
   Serial.begin(115200);
@@ -78,20 +76,15 @@ void setup() {
   }
 
   stepper.setMaxSpeed(STEPPER_MAX_SPEED);
-  stepper.setAcceleration(STEPPER_ACCEL);
   stepper.setEnablePin(-1);          // we drive EN ourselves
-  stepper.moveTo(jogSteps());
+  stepper.setSpeed(SPIN_CW ? TUNE_SPEED : -TUNE_SPEED);  // constant speed
 
-  Serial.println(F("Jogging +/- 1 wheel rev. Press on the wheel to test stall."));
+  Serial.println(F("Spinning at constant speed. Load/hold the wheel and watch"));
+  Serial.println(F("SG_RESULT drop toward 0 (and DIAG go to 1)."));
 }
 
 void loop() {
-  stepper.run();
-
-  // reverse at each end of travel
-  if (stepper.distanceToGo() == 0) {
-    stepper.moveTo(stepper.currentPosition() == 0 ? jogSteps() : 0);
-  }
+  stepper.runSpeed();  // steady speed -> steady SG_RESULT
 
   static unsigned long last = 0;
   if (millis() - last >= 250) {
