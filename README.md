@@ -1,5 +1,8 @@
 # Celebration Dispenser
 
+[![firmware](https://github.com/max246/celebration-dispenser/actions/workflows/firmware.yml/badge.svg)](https://github.com/max246/celebration-dispenser/actions/workflows/firmware.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A button-triggered desktop celebration machine. Press the button and it dispenses
 a treat (confetti, candy, sprinkles — your choice) via a stepper-driven mechanism
 while a WS2812 LED strip runs a light show and a sound plays over a small
@@ -45,5 +48,12 @@ idle.
 Almost everything you'll want to change (dispense amount, speed, stall
 sensitivity, LED count, volume, GPIO pins) lives in
 [`firmware/include/config.h`](firmware/include/config.h); the celebration and
-idle sounds are MP3s in `firmware/data/` (uploaded with `pio run -t uploadfs`).
-The printable parts and assembly guide live in [`hardware/`](hardware/).
+idle sounds are 16-bit WAV files in `firmware/data/` (uploaded with
+`pio run -t uploadfs`). The printable parts and assembly guide live in
+[`hardware/`](hardware/).
+
+## License
+
+[MIT](LICENSE) © Christian Bianchini. Note the bundled audio in `music/` /
+`firmware/data/` is git-ignored and not covered by this license — supply your
+own sounds.
