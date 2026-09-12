@@ -24,7 +24,7 @@ static const int PIN_TMC_TX = 39, PIN_TMC_RX = 38;
 static const float   TMC_RSENSE = 0.11f;
 static const uint8_t TMC_ADDRESS = 0b00;
 static const uint32_t TMC_BAUD = 115200;
-static const int  MOTOR_CURRENT_MA = 600;
+static const int  MOTOR_CURRENT_MA = 840;
 static const int  MICROSTEPPING = 16;
 static const long STEPS_PER_REV = 200;
 static const float GEAR_RATIO = 36.0f / 12.0f;   // 12T -> 36T
