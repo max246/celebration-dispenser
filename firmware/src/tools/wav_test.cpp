@@ -118,7 +118,9 @@ static void startClip(Clip& c, bool loopIt) {
 
 void setup() {
   Serial.begin(115200);
-  delay(5000);
+  // Wait for the USB serial monitor to attach (or 8s) so boot prints aren't missed.
+  for (unsigned long _t = millis(); !Serial && millis() - _t < 8000;) delay(10);
+  delay(300);
   Serial.println(F("\n=== WAV player test (both files, from PSRAM) ==="));
   if (!LittleFS.begin()) { Serial.println(F("LittleFS mount FAILED — uploadfs first.")); return; }
   Serial.println(F("Loading:"));

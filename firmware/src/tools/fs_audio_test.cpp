@@ -28,7 +28,9 @@ Audio audio;
 
 void setup() {
   Serial.begin(115200);
-  delay(5000);  // time to attach the serial monitor
+  // Wait for the USB serial monitor to attach (or 8s) so boot prints aren't missed.
+  for (unsigned long _t = millis(); !Serial && millis() - _t < 8000;) delay(10);
+  delay(300);
   Serial.println(F("\n=== LittleFS audio test (no WiFi / motor) ==="));
 
   if (!LittleFS.begin()) {
