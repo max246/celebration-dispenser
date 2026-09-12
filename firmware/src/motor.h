@@ -1,14 +1,14 @@
 #pragma once
 
-// TMC2209-driven dispense motor with StallGuard auto-unjam.
-//
-// The stepper is stepped in step/dir mode (AccelStepper) and configured over
-// UART (TMCStepper). When the candy jams, the motor stalls, the driver pulls
-// DIAG high, and this module backs off and retries automatically.
+// TMC2209-driven dispense motor. Runs the wheel continuously ("dispensing") and,
+// if the candy jams, automatically wiggles (reverse + forward) to clear it, up
+// to ANTIJAM_TIMEOUT_MS before giving up. The caller decides when to stop
+// (e.g. when the drop sensor confirms a treat fell, or a time limit is hit).
 namespace motor {
-void begin();       // configure the driver over UART — call once from setup()
-void dispense();    // start a single dispense move
-void update();       // run the motion + stall/unjam logic; call every loop
-bool isBusy();       // true while dispensing or clearing a jam
-bool wasJammed();    // true if the last dispense gave up after max retries
+void begin();          // configure the driver over UART — call once from setup()
+void run();            // start dispensing (continuous forward)
+void stop();            // stop and release holding torque
+void update();          // run motion + auto anti-jam; call every loop iteration
+bool isRunning();       // true while dispensing (or clearing a jam)
+bool jammedGaveUp();    // true if anti-jam ran out of time without clearing
 }  // namespace motor

@@ -43,8 +43,10 @@ static const long STEPS_PER_REV = 200;     // 1.8°/step NEMA 17 = 200 full step
 // Gear reduction from motor to the finger wheel: 12T pinion -> 36T gear = 3:1.
 // The motor turns GEAR_RATIO times for one wheel revolution.
 static const float GEAR_RATIO   = 36.0f / 12.0f;
-static const float DISPENSE_REVS = 1.0f;   // WHEEL (output) revolutions per celebration
+static const float DISPENSE_REVS = 1.0f;   // fixed portion used only when the drop sensor is OFF
 static const bool  DISPENSE_CW   = false;   // false to reverse
+// With the drop sensor ON, dispense runs until a treat drops, up to this long.
+static const unsigned long DISPENSE_TIMEOUT_MS = 10000;
 // Dispense at the speed StallGuard was tuned at — SG_RESULT is speed-specific,
 // so changing this means re-checking STALL_THRESHOLD with `motortest`.
 static const float STEPPER_MAX_SPEED = 1000.0f;  // microsteps/sec
@@ -63,9 +65,12 @@ static const unsigned long SG_POLL_MS  = 30;   // how often to read SG_RESULT
 // Only evaluate a stall at cruise speed — StallGuard is invalid during accel.
 static const unsigned long STALL_IGNORE_MS = 120;
 static const float STALL_MIN_SPEED         = 0.9f * STEPPER_MAX_SPEED;
-// On a jam: back off this many microsteps, then retry the dispense.
+// On a jam: back off this many microsteps, then resume forward (wiggle to clear).
 static const long UNJAM_REVERSE_STEPS = (long)(0.25f * STEPS_PER_REV * MICROSTEPPING);
-static const int  UNJAM_MAX_RETRIES   = 3;  // give up (and log) after this many
+// Keep trying to clear a jam (reverse+forward) for up to this long, then give up.
+static const unsigned long ANTIJAM_TIMEOUT_MS = 5000;
+// Running forward stall-free for this long counts the jam as cleared.
+static const unsigned long JAM_CLEAR_MS = 1000;
 
 // ---- LED strip -------------------------------------------------------------
 static const int LED_COUNT      = 16;
@@ -73,6 +78,15 @@ static const int LED_BRIGHTNESS = 120;  // 0-255
 
 // ---- Button ----------------------------------------------------------------
 static const unsigned long DEBOUNCE_MS = 40;
+
+// ---- Drop sensor (IR break-beam) -------------------------------------------
+// Receiver signal on this pin (INPUT_PULLUP). Beam intact = HIGH, broken = LOW.
+// Set ENABLE_DROP_SENSOR true once the sensor is wired; until then the dispenser
+// turns a fixed DISPENSE_REVS portion instead of "dispense until a drop".
+static const int  PIN_DROP_BEAM        = 8;      // "A5" <- break-beam receiver signal
+static const bool ENABLE_DROP_SENSOR   = false;  // flip true when the sensor is wired
+static const bool DROP_BEAM_ACTIVE_LOW = true;   // beam broken pulls the signal LOW
+static const unsigned long DROP_DEBOUNCE_MS = 8;
 
 // ---- Audio (MAX98357A over I2S, 16-bit WAV preloaded into PSRAM) ------------
 // Two 16-bit PCM WAV files on flash: a looping IDLE_FILE while waiting, and

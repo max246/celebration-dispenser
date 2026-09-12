@@ -5,41 +5,41 @@
 #include "config.h"
 #include "motor.h"
 
+// Continuous-run dispense engine with automatic anti-jam. Motion is constant
+// speed (runSpeed / runSpeedToPosition) because StallGuard needs steady step
+// timing. Stalls are detected by polling SG_RESULT over UART (the DIAG pin
+// didn't assert on this driver).
+
 namespace {
 
-// UART to the TMC2209 (single-wire PDN_UART via a 1k resistor on TX).
 HardwareSerial& kTmcSerial = Serial1;
 TMC2209Stepper driver(&kTmcSerial, TMC_RSENSE, TMC_ADDRESS);
 AccelStepper stepper(AccelStepper::DRIVER, PIN_STEP, PIN_DIR);
 
-enum Phase { IDLE, DISPENSING, UNJAM_REVERSE };
-Phase phase = IDLE;
+enum Phase { STOPPED, FORWARD, REVERSING };
+Phase phase = STOPPED;
 
-long dispenseTarget = 0;
-int retries = 0;
-bool jammed = false;
-unsigned long moveStartMs = 0;
+bool gaveUp = false;
+unsigned long fwdStartMs = 0;   // when the current forward run began (accel/settle window)
+unsigned long jamStartMs = 0;   // start of the current jam episode (0 = none)
+
+// SG_RESULT polling
 int sgLowCount = 0;
 unsigned long lastSgPollMs = 0;
 
-void enableDriver(bool on) {
-  // TMC2209 EN is active LOW.
-  digitalWrite(PIN_EN, on ? LOW : HIGH);
+void enableDriver(bool on) { digitalWrite(PIN_EN, on ? LOW : HIGH); }
+
+float fwdSpeed() { return DISPENSE_CW ? STEPPER_MAX_SPEED : -STEPPER_MAX_SPEED; }
+
+void startForward() {
+  stepper.setSpeed(fwdSpeed());
+  phase = FORWARD;
+  fwdStartMs = millis();
 }
 
-long dispenseSteps() {
-  // DISPENSE_REVS is wheel output revolutions; multiply by the gear ratio to
-  // get motor revolutions, then by steps/rev and microstepping.
-  const long steps =
-      (long)(DISPENSE_REVS * GEAR_RATIO * STEPS_PER_REV * MICROSTEPPING);
-  return DISPENSE_CW ? steps : -steps;
-}
-
-// Stall via SG_RESULT polled over UART (the DIAG pin didn't assert reliably).
-// Valid only at cruise speed and past the accel window; needs SG_STALL_CONFIRM
-// consecutive low reads to fire.
+// Stall via SG_RESULT, valid only at cruise speed and past the settle window.
 bool stallDetected() {
-  if (millis() - moveStartMs < STALL_IGNORE_MS) { sgLowCount = 0; return false; }
+  if (millis() - fwdStartMs < STALL_IGNORE_MS) { sgLowCount = 0; return false; }
   if (fabs(stepper.speed()) < STALL_MIN_SPEED) { sgLowCount = 0; return false; }
   if (millis() - lastSgPollMs < SG_POLL_MS) return false;
   lastSgPollMs = millis();
@@ -51,23 +51,11 @@ bool stallDetected() {
   return false;
 }
 
-void beginUnjam() {
-  Serial.print(F("Jam detected — backing off (retry "));
-  Serial.print(retries + 1);
-  Serial.print('/');
-  Serial.print(UNJAM_MAX_RETRIES);
-  Serial.println(')');
-  // Reverse relative to the current position, opposite the dispense direction.
+void beginReverse() {
   const long back = DISPENSE_CW ? -UNJAM_REVERSE_STEPS : UNJAM_REVERSE_STEPS;
-  stepper.move(back);
-  stepper.setSpeed(STEPPER_MAX_SPEED);  // constant speed (StallGuard needs steady timing)
-  phase = UNJAM_REVERSE;
-  moveStartMs = millis();
-}
-
-void finish() {
-  phase = IDLE;
-  if (!HOLD_TORQUE_WHEN_IDLE) enableDriver(false);
+  stepper.move(back);                    // relative back-off from here
+  stepper.setSpeed(STEPPER_MAX_SPEED);   // magnitude; direction from the target
+  phase = REVERSING;
 }
 
 }  // namespace
@@ -84,64 +72,59 @@ void motor::begin() {
   driver.rms_current(MOTOR_CURRENT_MA);
   driver.microsteps(MICROSTEPPING);
   driver.pwm_autoscale(true);
-  driver.en_spreadCycle(!USE_STEALTHCHOP);  // StallGuard4 works in StealthChop
-  driver.TCOOLTHRS(0xFFFFF);                 // enable StallGuard down to low speed
-  driver.SGTHRS(STALL_THRESHOLD);            // stall sensitivity -> DIAG output
+  driver.en_spreadCycle(!USE_STEALTHCHOP);
+  driver.TCOOLTHRS(0xFFFFF);
+  driver.SGTHRS(STALL_THRESHOLD);
 
   stepper.setMaxSpeed(STEPPER_MAX_SPEED);
   stepper.setEnablePin(-1);  // we manage EN ourselves
-  // Constant-speed motion (runSpeedToPosition), not accelerated — StallGuard
-  // needs steady step timing, and it's tuned at this one speed.
 
   Serial.print(F("TMC2209 version: 0x"));
   Serial.println(driver.version(), HEX);  // 0x21 when the UART link is good
 }
 
-void motor::dispense() {
-  retries = 0;
-  jammed = false;
+void motor::run() {
+  gaveUp = false;
+  jamStartMs = 0;
   enableDriver(true);
-  stepper.setCurrentPosition(0);
-  dispenseTarget = dispenseSteps();
-  stepper.moveTo(dispenseTarget);
-  stepper.setSpeed(STEPPER_MAX_SPEED);  // after moveTo — constant-speed motion
-  phase = DISPENSING;
-  moveStartMs = millis();
+  startForward();
+}
+
+void motor::stop() {
+  phase = STOPPED;
+  if (!HOLD_TORQUE_WHEN_IDLE) enableDriver(false);
 }
 
 void motor::update() {
   switch (phase) {
-    case IDLE:
+    case STOPPED:
       break;
 
-    case DISPENSING:
-      stepper.runSpeedToPosition();
+    case FORWARD:
+      stepper.setSpeed(fwdSpeed());
+      stepper.runSpeed();  // continuous forward at constant speed
+
       if (stallDetected()) {
-        beginUnjam();
-      } else if (stepper.distanceToGo() == 0) {
-        finish();
+        if (jamStartMs == 0) jamStartMs = millis();
+        if (millis() - jamStartMs > ANTIJAM_TIMEOUT_MS) {
+          Serial.println(F("anti-jam: gave up (still stuck)"));
+          gaveUp = true;
+          motor::stop();
+        } else {
+          Serial.println(F("jam — backing off to clear"));
+          beginReverse();
+        }
+      } else if (jamStartMs != 0 && millis() - fwdStartMs > JAM_CLEAR_MS) {
+        jamStartMs = 0;  // ran forward stall-free long enough — jam cleared
       }
       break;
 
-    case UNJAM_REVERSE:
+    case REVERSING:
       stepper.runSpeedToPosition();
-      if (stepper.distanceToGo() == 0) {
-        if (retries < UNJAM_MAX_RETRIES) {
-          retries++;
-          stepper.moveTo(dispenseTarget);  // resume toward the original target
-          stepper.setSpeed(STEPPER_MAX_SPEED);
-          phase = DISPENSING;
-          moveStartMs = millis();
-        } else {
-          jammed = true;
-          Serial.println(F("Still jammed after max retries — giving up."));
-          finish();
-        }
-      }
+      if (stepper.distanceToGo() == 0) startForward();  // resume dispensing
       break;
   }
 }
 
-bool motor::isBusy() { return phase != IDLE; }
-
-bool motor::wasJammed() { return jammed; }
+bool motor::isRunning() { return phase != STOPPED; }
+bool motor::jammedGaveUp() { return gaveUp; }
