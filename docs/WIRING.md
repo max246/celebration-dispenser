@@ -59,6 +59,24 @@ one coil pair.
 Speaker (4–8 Ω) to the amp's **SPK+ / SPK–** terminals. Leave `SD` unconnected
 (enabled) and `GAIN` unconnected for the default 9 dB.
 
+## Illuminated push button ↔ Feather
+
+The button has two independent parts: a momentary **switch** (two legs bridged
+when pressed) and a built-in **LED** (bare ~2 V LED, no internal resistor).
+
+| Feather | Button       | Notes                                             |
+|---------|--------------|---------------------------------------------------|
+| D11     | switch leg 1 | `INPUT_PULLUP`; pressed = LOW                      |
+| GND     | switch leg 2 | the switch just shorts D11 → GND                  |
+| D13     | LED +        | **through a ~220 Ω resistor** (150–330 Ω OK)      |
+| GND     | LED –        | LED cathode to ground                             |
+
+The LED runs on **LEDC hardware PWM**: a slow breathing glow while idle, solid at
+full brightness while a celebration runs. D13 also drives the Feather's on-board
+red LED, so it mirrors the button (harmless). If the button never triggers, the
+two switch legs may be a permanently-connected pair — on a 4-pin tactile switch
+use legs on *opposite* corners.
+
 ## Bench test before the full build
 
 Flash the standalone motor test to check the driver + motor in isolation (no
@@ -68,7 +86,9 @@ WiFi/audio needed) — see [Bench test](../firmware/README.md#bench-test-motor):
 cd firmware
 pio run -e motortest -t upload      # motor / TMC2209
 pio run -e audiotest -t upload      # audio / MAX98357A (needs secrets.h WiFi)
-pio device monitor -e motortest     # (or -e audiotest)
+pio run -e beamtest -t upload       # IR break-beam drop sensor (counts breaks)
+pio run -e buttontest -t upload     # push button + its LED (breathe / solid)
+pio device monitor -e motortest     # (or -e audiotest / -e beamtest / -e buttontest)
 ```
 
 - **Motor:** expect `TMC2209 version: 0x21` (UART OK), the wheel jogging back and

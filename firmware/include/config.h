@@ -22,8 +22,10 @@ static const int PIN_TMC_TX = 39;  // "TX"  -> TMC2209 PDN_UART (via 1k)
 static const int PIN_TMC_RX = 38;  // "RX"  <- TMC2209 PDN_UART
 
 // Controls / feedback:
-static const int PIN_BUTTON = 11;  // "D11" push button to GND (INPUT_PULLUP)
-static const int PIN_LED    = 12;  // "D12" WS2812 strip data (330-470R in series)
+static const int PIN_BUTTON     = 11;  // "D11" push button to GND (INPUT_PULLUP)
+static const int PIN_BUTTON_LED = 13;  // "D13" illuminated-button LED via ~220R
+                                       //  (also drives the on-board red LED)
+static const int PIN_LED        = 12;  // "D12" WS2812 strip data (330-470R in series)
 
 // MAX98357A I2S audio amp:
 static const int PIN_I2S_BCLK = 36;  // "SCK" -> MAX98357A BCLK
@@ -78,6 +80,16 @@ static const int LED_BRIGHTNESS = 120;  // 0-255
 
 // ---- Button ----------------------------------------------------------------
 static const unsigned long DEBOUNCE_MS = 40;
+
+// ---- Illuminated-button LED (bare ~2V LED, GPIO -> ~220R -> LED -> GND) -----
+// Driven with LEDC hardware PWM: a slow "breathing" glow while idle, solid full
+// brightness while the button is held / a celebration is running.
+static const int BTN_LED_PWM_CH   = 0;     // LEDC channel (audio uses I2S, LEDs use RMT — 0 is free)
+static const int BTN_LED_PWM_FREQ = 5000;  // Hz
+static const int BTN_LED_PWM_BITS = 8;     // duty resolution: 0..255
+static const int BTN_LED_IDLE_MIN = 6;     // dimmest point of the idle breathe (0..255)
+static const int BTN_LED_IDLE_MAX = 90;    // brightest point of the idle breathe
+static const unsigned long BTN_LED_BREATHE_MS = 2600;  // one full breathe cycle
 
 // ---- Drop sensor (IR break-beam) -------------------------------------------
 // Receiver signal on this pin (INPUT_PULLUP). Beam intact = HIGH, broken = LOW.
