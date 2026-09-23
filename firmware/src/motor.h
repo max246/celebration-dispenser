@@ -7,7 +7,7 @@
 namespace motor {
 void begin();          // configure the driver over UART — call once from setup()
 void run();            // start dispensing (continuous forward)
-void stop();            // stop and release holding torque
+void stop();            // stop and release holding torque (driver off)
 void update();          // run motion + auto anti-jam; call every loop iteration
 bool isRunning();       // true while dispensing (or clearing a jam)
 bool jammedGaveUp();    // true if anti-jam ran out of time without clearing

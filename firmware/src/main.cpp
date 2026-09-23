@@ -2,13 +2,22 @@
 
 #include "audio_player.h"
 #include "beam.h"
+#include "button_led.h"
 #include "config.h"
 #include "lights.h"
 #include "motor.h"
 
+// Behaviour:
+//   IDLE        button LED breathes; the idle sound chimes every
+//               IDLE_AUDIO_PERIOD_MS (5 min). A button press starts a celebration.
+//   CELEBRATING button LED off; the eyes flash orange; the celebration sound
+//               plays; the motor dispenses (with anti-jam) until the drop sensor
+//               sees a treat fall, or DISPENSE_TIMEOUT_MS (30 s) gives up. Once
+//               the dispense is done and the sound has finished, it returns to IDLE.
 enum State { IDLE, CELEBRATING };
 static State state = IDLE;
 static unsigned long celebrationStart = 0;
+static unsigned long nextIdleAudioMs = 0;
 static bool dispenseDone = false;
 
 // Fixed dispense time (used only when the drop sensor is off): how long to turn
@@ -36,20 +45,27 @@ static bool buttonPressed() {
   return false;
 }
 
+static void scheduleNextIdleAudio() {
+  nextIdleAudioMs = millis() + IDLE_AUDIO_PERIOD_MS;
+}
+
 static void startCelebration() {
   state = CELEBRATING;
   celebrationStart = millis();
   dispenseDone = false;
   beam::resetDrops();
-  motor::run();                    // start dispensing (continuous)
-  lights::startShow();
-  audioplayer::playCelebration();  // takes over from the idle ambience
+  buttonled::off();                // button goes dark for the show
+  lights::startEyes();             // orange eyes flash
+  audioplayer::playCelebration();  // takes over from the idle chime
+  motor::run();                    // start dispensing (continuous, auto-unjam)
 }
 
 static void endCelebration() {
   state = IDLE;
+  motor::stop();
   lights::off();
-  audioplayer::playIdle();  // back to the looping idle sound
+  buttonled::breathe();     // glowing button again
+  scheduleNextIdleAudio();  // next idle chime in 5 min (no immediate replay)
 }
 
 // Decide when the dispensing part of a celebration is finished, and stop the
@@ -68,13 +84,13 @@ static void serviceDispense() {
 
   if (ENABLE_DROP_SENSOR) {
     if (beam::drops() > 0) {
-      motor::stop();
+      motor::stop();  // wheel off; the celebration keeps running until the audio ends
       dispenseDone = true;
-      Serial.println(F("dispense: treat dropped"));
+      Serial.println(F("dispense: treat dropped (finishing the track)"));
     } else if (elapsed > DISPENSE_TIMEOUT_MS) {
       motor::stop();
       dispenseDone = true;
-      Serial.println(F("dispense: no drop within timeout (empty/refill?)"));
+      Serial.println(F("dispense: no drop within 30 s (empty/refill?)"));
     }
   } else if (elapsed > DISPENSE_FIXED_MS) {
     motor::stop();
@@ -92,20 +108,28 @@ void setup() {
   lights::begin();
   motor::begin();
   beam::begin();
+  buttonled::begin();
   audioplayer::begin();
-  audioplayer::playIdle();  // start the looping idle ambience
+
+  buttonled::breathe();     // idle glow from the start
+  scheduleNextIdleAudio();  // first idle chime one period from boot
 
   Serial.println(F("Celebration Dispenser ready. Press the button!"));
 }
 
 void loop() {
-  audioplayer::update();  // service the audio decoder constantly
+  audioplayer::update();  // service the audio constantly
   beam::update();          // debounce the drop sensor
 
   const bool pressed = buttonPressed();
 
   switch (state) {
     case IDLE:
+      buttonled::update();  // breathe
+      if (ENABLE_IDLE_AUDIO && (long)(millis() - nextIdleAudioMs) >= 0) {
+        audioplayer::playIdle();
+        scheduleNextIdleAudio();
+      }
       if (pressed) {
         Serial.println(F("Celebrate!"));
         startCelebration();

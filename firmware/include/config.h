@@ -47,8 +47,9 @@ static const long STEPS_PER_REV = 200;     // 1.8°/step NEMA 17 = 200 full step
 static const float GEAR_RATIO   = 36.0f / 12.0f;
 static const float DISPENSE_REVS = 1.0f;   // fixed portion used only when the drop sensor is OFF
 static const bool  DISPENSE_CW   = false;   // false to reverse
-// With the drop sensor ON, dispense runs until a treat drops, up to this long.
-static const unsigned long DISPENSE_TIMEOUT_MS = 10000;
+// With the drop sensor ON, dispense runs until a treat drops, up to this long
+// (30 s), then gives up (empty hopper / stuck candy).
+static const unsigned long DISPENSE_TIMEOUT_MS = 30000;
 // Dispense at the speed StallGuard was tuned at — SG_RESULT is speed-specific,
 // so changing this means re-checking STALL_THRESHOLD with `motortest`.
 static const float STEPPER_MAX_SPEED = 4000.0f;  // AccelStepper software ceiling; watch startup slip + re-tune stall
@@ -82,8 +83,8 @@ static const int LED_BRIGHTNESS = 120;  // 0-255
 static const unsigned long DEBOUNCE_MS = 40;
 
 // ---- Illuminated-button LED (bare ~2V LED, GPIO -> ~220R -> LED -> GND) -----
-// Driven with LEDC hardware PWM: a slow "breathing" glow while idle, solid full
-// brightness while the button is held / a celebration is running.
+// Driven with LEDC hardware PWM: a slow "breathing" glow while idle, and dark
+// for the whole celebration (the eyes take over the show), then it glows again.
 static const int BTN_LED_PWM_CH   = 0;     // LEDC channel (audio uses I2S, LEDs use RMT — 0 is free)
 static const int BTN_LED_PWM_FREQ = 5000;  // Hz
 static const int BTN_LED_PWM_BITS = 8;     // duty resolution: 0..255
@@ -96,9 +97,23 @@ static const unsigned long BTN_LED_BREATHE_MS = 2600;  // one full breathe cycle
 // Set ENABLE_DROP_SENSOR true once the sensor is wired; until then the dispenser
 // turns a fixed DISPENSE_REVS portion instead of "dispense until a drop".
 static const int  PIN_DROP_BEAM        = 8;      // "A5" <- break-beam receiver signal
-static const bool ENABLE_DROP_SENSOR   = false;  // flip true when the sensor is wired
+static const bool ENABLE_DROP_SENSOR   = true;   // wired + tested; dispense until a drop
 static const bool DROP_BEAM_ACTIVE_LOW = true;   // beam broken pulls the signal LOW
 static const unsigned long DROP_DEBOUNCE_MS = 8;
+
+// ---- Eyes light show (WS2812) ----------------------------------------------
+// During a celebration the strip flashes two small "eye" sections orange. The
+// strip is one continuous chain of LED_COUNT pixels; each eye is a contiguous
+// run described by its first pixel + length. ADJUST these to match where the
+// pixels physically land on the two eyes once the strip is mounted.
+static const int EYE1_FIRST = 3;   // first pixel of the left eye
+static const int EYE1_LEN   = 2;   // pixels in the left eye
+static const int EYE2_FIRST = 11;  // first pixel of the right eye
+static const int EYE2_LEN   = 2;   // pixels in the right eye
+// Orange (Adafruit_NeoPixel::Color() takes R,G,B; the driver reorders to GRB).
+static const uint8_t EYE_R = 255, EYE_G = 60, EYE_B = 0;
+static const unsigned long EYE_FLASH_ON_MS  = 220;  // lit time per blink
+static const unsigned long EYE_FLASH_OFF_MS = 220;  // dark time per blink
 
 // ---- Audio (MAX98357A over I2S, 16-bit WAV preloaded into PSRAM) ------------
 // Two 16-bit PCM WAV files on flash: a looping IDLE_FILE while waiting, and
@@ -109,8 +124,12 @@ static const unsigned long DROP_DEBOUNCE_MS = 8;
 static const char* const AUDIO_FILE = "/celebrate.wav";
 static const char* const IDLE_FILE  = "/idle.wav";
 static const int  CELEBRATION_VOLUME = 21;    // 0-21 (21 = full digital scale)
-static const bool ENABLE_IDLE_AUDIO  = true;  // loop an ambient sound while idle
+static const bool ENABLE_IDLE_AUDIO  = true;  // chime an ambient sound while idle
 static const int  IDLE_VOLUME        = 12;    // usually quieter than celebration
+// While idle the idle sound plays once, then again every IDLE_AUDIO_PERIOD_MS
+// (30 s) as long as nobody presses the button. The timer resets after each
+// celebration, so the next idle chime is one full period later (no instant replay).
+static const unsigned long IDLE_AUDIO_PERIOD_MS = 30UL * 1000UL;
 
 // ---- Celebration timing ----------------------------------------------------
 // The show runs at least this long even if the motor finishes early.

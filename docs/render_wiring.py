@@ -28,7 +28,7 @@ MONO = {"family": "monospace"}
 
 img = imread(BASE)
 H, W = img.shape[0], img.shape[1]
-BAND = 230                      # extra height added below the base for the button
+BAND = 250                      # extra height added below the base for the button + strip
 TOTAL = H + BAND
 
 fig = plt.figure(figsize=(W / 100.0, TOTAL / 100.0), dpi=100, facecolor="white")
@@ -53,14 +53,14 @@ def gnd_symbol(x, y, color=GND):
         yy = y + i * 5
         ax.plot([x - hw, x + hw], [yy, yy], color=color, lw=2.2, zorder=6)
 
-def flag(x, y, label):
+def flag(x, y, label, color=BTN):
     """A named net-label tag sitting on top of a wire end at (x, y)."""
     w, h = 48, 22
     ax.add_patch(FancyBboxPatch((x - w / 2, y - h), w, h,
                  boxstyle="round,pad=0,rounding_size=5",
-                 linewidth=1.8, edgecolor=BTN, facecolor="white", zorder=6))
+                 linewidth=1.8, edgecolor=color, facecolor="white", zorder=6))
     ax.text(x, y - h / 2, label, ha="center", va="center",
-            fontsize=9.5, color=BTN, zorder=7, **MONO)
+            fontsize=9.5, color=color, zorder=7, **MONO)
 
 # --- Illuminated push-button component (in the new bottom band) --------------
 bx, by, bw, bh = 60, H + 70, 320, 130
@@ -74,7 +74,7 @@ ax.text(bx + 70, by + 66, "SW", ha="center", va="center",
         fontsize=11, color="#333", zorder=7, **MONO)
 ax.text(bx + 230, by + 66, "LED", ha="center", va="center",
         fontsize=11, color="#333", zorder=7, **MONO)
-ax.text(bx + bw / 2, by + 104, "press: D11→GND  ·  LED: PWM glow / solid",
+ax.text(bx + bw / 2, by + 104, "press: D11→GND  ·  LED: PWM glow (off in show)",
         ha="center", va="center", fontsize=8.5, color="#7a1f5c", zorder=7, **MONO)
 
 SW_X, LED_X = bx + 70, bx + 230
@@ -101,10 +101,49 @@ wire([(LED_X, by + bh), (LED_X, gnd_y)], GND)
 gnd_symbol(SW_X, gnd_y)
 gnd_symbol(LED_X, gnd_y)
 
-# Small colour key for the added net.
-ax.plot([bx + bw + 40, bx + bw + 74], [by + 30, by + 30], color=BTN, lw=3, zorder=6)
-ax.text(bx + bw + 82, by + 30, "button + LED", ha="left", va="center",
-        fontsize=9.5, color="#333", zorder=7, **MONO)
+# --- WS2812 "eyes" strip (in the band, to the right of the button) ----------
+LED_DATA = "#0e9bd6"   # WS2812 data line
+V5 = "#e8912a"         # 5V, matched to the base diagram's "5V (USB)" colour
+sx, sy, sw, sh = 560, H + 70, 380, 130
+ax.add_patch(FancyBboxPatch((sx, sy), sw, sh,
+             boxstyle="round,pad=0,rounding_size=12",
+             linewidth=2.2, edgecolor="#8a8a8a", facecolor="#f0f0f0", zorder=4))
+ax.text(sx + sw / 2, sy + 24, "WS2812 strip — eyes",
+        ha="center", va="center", fontsize=13, fontweight="bold",
+        color="#333", zorder=7, **MONO)
+# a little run of pixels, two lit orange (the eyes)
+px_n, px_w, gap = 10, 22, 6
+row_w = px_n * px_w + (px_n - 1) * gap
+px0 = sx + sw / 2 - row_w / 2
+py = sy + 52
+eyes = {2, 7}
+for i in range(px_n):
+    x = px0 + i * (px_w + gap)
+    fc = "#ff7a1a" if i in eyes else "#ffffff"
+    ax.add_patch(Rectangle((x, py), px_w, px_w, linewidth=1.2,
+                 edgecolor="#999", facecolor=fc, zorder=6))
+ax.text(sx + sw / 2, sy + sh - 14, "two small sections flash orange",
+        ha="center", va="center", fontsize=8.5, color="#555", zorder=7, **MONO)
+
+DIN_X, V5_X = sx + 55, sx + sw - 55
+# DIN -> 330 ohm series resistor -> D12 net tag.
+rw2, rh2 = 64, 24
+ry2 = TAG_Y + 14
+ax.add_patch(Rectangle((DIN_X - rw2 / 2, ry2), rw2, rh2, linewidth=1.8,
+             edgecolor=GND, facecolor="white", zorder=6))
+ax.text(DIN_X, ry2 + rh2 / 2, "330Ω", ha="center", va="center",
+        fontsize=9, color=GND, zorder=7, **MONO)
+wire([(DIN_X, sy), (DIN_X, ry2 + rh2)], LED_DATA)   # box top -> resistor
+wire([(DIN_X, ry2), (DIN_X, TAG_Y)], LED_DATA)      # resistor -> tag
+flag(DIN_X, TAG_Y, "D12", LED_DATA)
+# 5V power -> net tag (USB/5V rail).
+wire([(V5_X, sy), (V5_X, TAG_Y)], V5)
+flag(V5_X, TAG_Y, "5V", V5)
+# Ground -> local ground symbol.
+gx = sx + sw / 2
+gy2 = sy + sh + 18
+wire([(gx, sy + sh), (gx, gy2)], GND)
+gnd_symbol(gx, gy2)
 
 fig.savefig(OUT, dpi=100)
 print("wrote", OUT, "->", (TOTAL, W))

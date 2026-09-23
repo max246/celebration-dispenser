@@ -155,7 +155,7 @@ void audioplayer::playIdle() {
     return;
   }
   mode = IDLE;
-  startClip(idleClip, IDLE_VOLUME, true);
+  startClip(idleClip, IDLE_VOLUME, false);  // one-shot; main re-chimes it every IDLE_AUDIO_PERIOD_MS
 }
 
 void audioplayer::playCelebration() {
@@ -190,6 +190,7 @@ void audioplayer::update() {
     t++;
   }
   if (built == 0) {  // one-shot finished feeding
+    if (mode == CELEBRATION && !celebEnded) Serial.println(F("audio: celebration finished"));
     celebEnded = true;
     return;
   }
@@ -201,6 +202,7 @@ void audioplayer::update() {
   if (loopCur) {
     if (cur->frames) frameIdx %= cur->frames;
   } else if (frameIdx >= cur->frames) {
+    if (mode == CELEBRATION && !celebEnded) Serial.println(F("audio: celebration finished"));
     celebEnded = true;
   }
 }

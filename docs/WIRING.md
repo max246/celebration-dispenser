@@ -71,11 +71,29 @@ when pressed) and a built-in **LED** (bare ~2 V LED, no internal resistor).
 | D13     | LED +        | **through a ~220 Ω resistor** (150–330 Ω OK)      |
 | GND     | LED –        | LED cathode to ground                             |
 
-The LED runs on **LEDC hardware PWM**: a slow breathing glow while idle, solid at
-full brightness while a celebration runs. D13 also drives the Feather's on-board
-red LED, so it mirrors the button (harmless). If the button never triggers, the
-two switch legs may be a permanently-connected pair — on a 4-pin tactile switch
-use legs on *opposite* corners.
+The LED runs on **LEDC hardware PWM**: a slow breathing glow while idle, and it
+switches **off** for the duration of a celebration (the eyes take over the show).
+D13 also drives the Feather's on-board red LED, so it mirrors the button
+(harmless). If the button never triggers, the two switch legs may be a
+permanently-connected pair — on a 4-pin tactile switch use legs on *opposite*
+corners.
+
+## WS2812 "eyes" strip ↔ Feather
+
+A single chain of `LED_COUNT` (16) 5 V NeoPixels. During a celebration two small
+contiguous sections (the eyes) flash orange; set their pixel ranges in
+`config.h` (`EYE1_FIRST/LEN`, `EYE2_FIRST/LEN`) to match the physical layout.
+
+| Feather | Strip | Notes                                                     |
+|---------|-------|-----------------------------------------------------------|
+| D12     | DIN   | **through a 330–470 Ω** series resistor, near the strip   |
+| USB/5V  | 5V    | 5 V power (external 5 V PSU for long strips; GND common)   |
+| GND     | GND   | common ground with the Feather                            |
+
+Mind data **direction** — connect to the DIN end (arrows point away from DIN). A
+**1000 µF** cap across the strip's 5V/GND helps with inrush. The ESP32-S2 data
+line is 3.3 V; short runs usually work, but add a level shifter (74AHCT125) if
+the strip is flaky.
 
 ## Bench test before the full build
 
@@ -88,7 +106,8 @@ pio run -e motortest -t upload      # motor / TMC2209
 pio run -e audiotest -t upload      # audio / MAX98357A (needs secrets.h WiFi)
 pio run -e beamtest -t upload       # IR break-beam drop sensor (counts breaks)
 pio run -e buttontest -t upload     # push button + its LED (breathe / solid)
-pio device monitor -e motortest     # (or -e audiotest / -e beamtest / -e buttontest)
+pio run -e lightstest -t upload     # WS2812 strip (colour/dot/rainbow patterns)
+pio device monitor -e motortest     # (or -e audiotest / beamtest / buttontest / lightstest)
 ```
 
 - **Motor:** expect `TMC2209 version: 0x21` (UART OK), the wheel jogging back and
