@@ -19,6 +19,7 @@ static State state = IDLE;
 static unsigned long celebrationStart = 0;
 static unsigned long nextIdleAudioMs = 0;
 static bool dispenseDone = false;
+static bool idleGlowOn = false;  // FLASH section glowing yellow for the idle chime
 
 // Fixed dispense time (used only when the drop sensor is off): how long to turn
 // DISPENSE_REVS at the run speed.
@@ -54,6 +55,7 @@ static void startCelebration() {
   celebrationStart = millis();
   dispenseDone = false;
   beam::resetDrops();
+  idleGlowOn = false;              // the eyes show replaces the idle glow
   buttonled::off();                // button goes dark for the show
   lights::startEyes();             // orange eyes flash
   audioplayer::playCelebration();  // takes over from the idle chime
@@ -128,7 +130,15 @@ void loop() {
       buttonled::update();  // breathe
       if (ENABLE_IDLE_AUDIO && (long)(millis() - nextIdleAudioMs) >= 0) {
         audioplayer::playIdle();
+        if (audioplayer::isIdlePlaying()) {
+          lights::startIdleGlow();  // yellow glow for as long as the chime plays
+          idleGlowOn = true;
+        }
         scheduleNextIdleAudio();
+      }
+      if (idleGlowOn && !audioplayer::isIdlePlaying()) {
+        lights::off();
+        idleGlowOn = false;
       }
       if (pressed) {
         Serial.println(F("Celebrate!"));

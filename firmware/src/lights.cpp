@@ -7,17 +7,17 @@ namespace {
 
 Adafruit_NeoPixel strip(LED_COUNT, PIN_LED, NEO_GRB + NEO_KHZ800);
 
-enum Mode { OFF_M, RAINBOW_M, EYES_M };
+enum Mode { OFF_M, RAINBOW_M, EYES_M, GLOW_M };
 Mode mode = OFF_M;
 unsigned long startMs = 0;
 int lastEyeOn = -1;  // -1 = force first render; else 0/1 last blink state
 
 const unsigned long kCycleMs = 1200;  // time for one full rainbow rotation
 
-// Light a contiguous run of pixels [first, first+len) with the eye colour,
-// clamped to the strip so a mis-set eye index can't run off the end.
-void paintEye(int first, int len, uint32_t color) {
-  for (int i = first; i < first + len; i++) {
+// Light the inclusive pixel range [first, last] with a colour, clamped to the
+// strip so a mis-set index can't run off the end.
+void paintRange(int first, int last, uint32_t color) {
+  for (int i = first; i <= last; i++) {
     if (i >= 0 && i < LED_COUNT) strip.setPixelColor(i, color);
   }
 }
@@ -42,9 +42,17 @@ void lights::startEyes() {
   lastEyeOn = -1;  // render on the next update()
 }
 
+void lights::startIdleGlow() {
+  mode = GLOW_M;
+  strip.clear();
+  paintRange(FLASH_FIRST, FLASH_LAST, strip.Color(IDLE_GLOW_R, IDLE_GLOW_G, IDLE_GLOW_B));
+  strip.show();  // static colour — nothing to animate in update()
+}
+
 void lights::update() {
   switch (mode) {
     case OFF_M:
+    case GLOW_M:
       return;
 
     case RAINBOW_M: {
@@ -70,8 +78,9 @@ void lights::update() {
       strip.clear();
       if (on) {
         const uint32_t orange = strip.Color(EYE_R, EYE_G, EYE_B);
-        paintEye(EYE1_FIRST, EYE1_LEN, orange);
-        paintEye(EYE2_FIRST, EYE2_LEN, orange);
+        paintRange(EYE1_FIRST, EYE1_LAST, orange);
+        paintRange(EYE2_FIRST, EYE2_LAST, orange);
+        paintRange(FLASH_FIRST, FLASH_LAST, strip.Color(FLASH_R, FLASH_G, FLASH_B));
       }
       strip.show();
       break;

@@ -76,7 +76,7 @@ static const unsigned long ANTIJAM_TIMEOUT_MS = 5000;
 static const unsigned long JAM_CLEAR_MS = 1000;
 
 // ---- LED strip -------------------------------------------------------------
-static const int LED_COUNT      = 16;
+static const int LED_COUNT      = 121;  // pixels 0..120 (must cover EYE*/FLASH_LAST)
 static const int LED_BRIGHTNESS = 120;  // 0-255
 
 // ---- Button ----------------------------------------------------------------
@@ -102,16 +102,21 @@ static const bool DROP_BEAM_ACTIVE_LOW = true;   // beam broken pulls the signal
 static const unsigned long DROP_DEBOUNCE_MS = 8;
 
 // ---- Eyes light show (WS2812) ----------------------------------------------
-// During a celebration the strip flashes two small "eye" sections orange. The
-// strip is one continuous chain of LED_COUNT pixels; each eye is a contiguous
-// run described by its first pixel + length. ADJUST these to match where the
-// pixels physically land on the two eyes once the strip is mounted.
-static const int EYE1_FIRST = 3;   // first pixel of the left eye
-static const int EYE1_LEN   = 2;   // pixels in the left eye
-static const int EYE2_FIRST = 11;  // first pixel of the right eye
-static const int EYE2_LEN   = 2;   // pixels in the right eye
-// Orange (Adafruit_NeoPixel::Color() takes R,G,B; the driver reorders to GRB).
-static const uint8_t EYE_R = 255, EYE_G = 60, EYE_B = 0;
+// During a celebration the strip flashes two "eye" sections orange and a longer
+// section white, all blinking together. The strip is one continuous chain of
+// LED_COUNT pixels; each section is an inclusive pixel range [FIRST, LAST].
+// ADJUST these to match where the pixels physically land once mounted.
+static const int EYE1_FIRST  = 0;    // left eye (orange)
+static const int EYE1_LAST   = 5;
+static const int EYE2_FIRST  = 35;   // right eye (orange)
+static const int EYE2_LAST   = 45;
+static const int FLASH_FIRST = 60;   // white flash section
+static const int FLASH_LAST  = 120;
+// Colours (Adafruit_NeoPixel::Color() takes R,G,B; the driver reorders to GRB).
+static const uint8_t EYE_R = 255, EYE_G = 60, EYE_B = 0;        // orange
+static const uint8_t FLASH_R = 255, FLASH_G = 255, FLASH_B = 255;  // white
+// While the idle chime plays, the FLASH section glows steady yellow.
+static const uint8_t IDLE_GLOW_R = 255, IDLE_GLOW_G = 180, IDLE_GLOW_B = 0;
 static const unsigned long EYE_FLASH_ON_MS  = 220;  // lit time per blink
 static const unsigned long EYE_FLASH_OFF_MS = 220;  // dark time per blink
 
@@ -121,6 +126,13 @@ static const unsigned long EYE_FLASH_OFF_MS = 220;  // dark time per blink
 // from RAM (no MP3 decode / no flash reads mid-playback -> clean on the S2).
 // Encode mono, e.g. 22050 Hz: see firmware/data/README.md. Put both in
 // firmware/data/ and run `pio run -t uploadfs`. Volumes are 0-21.
+// Master sound switch: 1 = play sounds, 0 = silent build (no WAV loading, no
+// I2S). With it off the celebration lasts MIN_CELEBRATION_MS / until the
+// dispense finishes. Can also be overridden from platformio.ini build_flags
+// with -DENABLE_AUDIO=0.
+#ifndef ENABLE_AUDIO
+#define ENABLE_AUDIO 1
+#endif
 static const char* const AUDIO_FILE = "/celebrate.wav";
 static const char* const IDLE_FILE  = "/idle.wav";
 static const int  CELEBRATION_VOLUME = 21;    // 0-21 (21 = full digital scale)

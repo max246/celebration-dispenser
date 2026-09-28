@@ -10,4 +10,5 @@ void playIdle();              // play the idle chime once (interrupts celebratio
 void playCelebration();       // play the celebration sound once (interrupts idle)
 void update();                 // service the decoder + loop the idle file
 bool isCelebrationPlaying();   // true only while the celebration sound is playing
+bool isIdlePlaying();          // true only while the idle chime is playing
 }  // namespace audioplayer

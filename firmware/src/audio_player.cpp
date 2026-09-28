@@ -6,6 +6,8 @@
 #include "audio_player.h"
 #include "config.h"
 
+#if ENABLE_AUDIO
+
 // Audio is 16-bit PCM WAV, preloaded into PSRAM at boot and fed to I2S from RAM.
 // No MP3 decode and no flash access during playback — that's what keeps it clean
 // on the single-core S2 (decoding or reading flash mid-playback starves I2S).
@@ -30,7 +32,7 @@ uint32_t frameIdx = 0;
 bool loopCur = false;
 int curVol = 15;           // 0..21
 uint32_t curRate = 0;
-bool celebEnded = false;
+bool clipEnded = false;
 bool i2sReady = false;
 
 // ---- WAV loading -----------------------------------------------------------
@@ -128,7 +130,7 @@ void startClip(Clip& c, int vol, bool loopIt) {
   frameIdx = 0;
   loopCur = loopIt;
   curVol = vol;
-  celebEnded = false;
+  clipEnded = false;
 }
 
 inline int16_t frameSample(const Clip& c, uint32_t fi) {
@@ -190,8 +192,8 @@ void audioplayer::update() {
     t++;
   }
   if (built == 0) {  // one-shot finished feeding
-    if (mode == CELEBRATION && !celebEnded) Serial.println(F("audio: celebration finished"));
-    celebEnded = true;
+    if (mode == CELEBRATION && !clipEnded) Serial.println(F("audio: celebration finished"));
+    clipEnded = true;
     return;
   }
 
@@ -202,11 +204,26 @@ void audioplayer::update() {
   if (loopCur) {
     if (cur->frames) frameIdx %= cur->frames;
   } else if (frameIdx >= cur->frames) {
-    if (mode == CELEBRATION && !celebEnded) Serial.println(F("audio: celebration finished"));
-    celebEnded = true;
+    if (mode == CELEBRATION && !clipEnded) Serial.println(F("audio: celebration finished"));
+    clipEnded = true;
   }
 }
 
 bool audioplayer::isCelebrationPlaying() {
-  return mode == CELEBRATION && !celebEnded;
+  return mode == CELEBRATION && !clipEnded;
 }
+
+bool audioplayer::isIdlePlaying() {
+  return mode == IDLE && !clipEnded;
+}
+
+#else  // !ENABLE_AUDIO — sound disabled in config.h: silent no-op stubs
+
+void audioplayer::begin() { Serial.println(F("audio: disabled (ENABLE_AUDIO 0)")); }
+void audioplayer::playIdle() {}
+void audioplayer::playCelebration() {}
+void audioplayer::update() {}
+bool audioplayer::isCelebrationPlaying() { return false; }
+bool audioplayer::isIdlePlaying() { return false; }
+
+#endif  // ENABLE_AUDIO
