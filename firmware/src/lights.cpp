@@ -1,4 +1,5 @@
 #include <Adafruit_NeoPixel.h>
+#include <math.h>
 
 #include "config.h"
 #include "lights.h"
@@ -11,6 +12,8 @@ enum Mode { OFF_M, RAINBOW_M, EYES_M, GLOW_M };
 Mode mode = OFF_M;
 unsigned long startMs = 0;
 int lastEyeOn = -1;  // -1 = force first render; else 0/1 last blink state
+unsigned long lastGlowMs = 0;
+const unsigned long kGlowFrameMs = 20;  // ~50 fps; show() on 121 px takes ~4 ms
 
 const unsigned long kCycleMs = 1200;  // time for one full rainbow rotation
 
@@ -44,16 +47,30 @@ void lights::startEyes() {
 
 void lights::startIdleGlow() {
   mode = GLOW_M;
+  startMs = millis();
+  lastGlowMs = startMs - kGlowFrameMs;  // render on the next update()
   strip.clear();
-  paintRange(FLASH_FIRST, FLASH_LAST, strip.Color(IDLE_GLOW_R, IDLE_GLOW_G, IDLE_GLOW_B));
-  strip.show();  // static colour — nothing to animate in update()
 }
 
 void lights::update() {
   switch (mode) {
     case OFF_M:
-    case GLOW_M:
       return;
+
+    case GLOW_M: {
+      // Smooth pulse: level follows a raised cosine from MIN up to MAX and back.
+      const unsigned long now = millis();
+      if (now - lastGlowMs < kGlowFrameMs) break;
+      lastGlowMs = now;
+      const float phase = (float)((now - startMs) % IDLE_GLOW_PULSE_MS) / IDLE_GLOW_PULSE_MS;
+      const float wave = 0.5f - 0.5f * cosf(phase * 2.0f * (float)M_PI);  // 0..1..0
+      const int level = IDLE_GLOW_MIN + (int)(wave * (IDLE_GLOW_MAX - IDLE_GLOW_MIN));
+      paintRange(FLASH_FIRST, FLASH_LAST,
+                 strip.Color(IDLE_GLOW_R * level / 255, IDLE_GLOW_G * level / 255,
+                             IDLE_GLOW_B * level / 255));
+      strip.show();
+      break;
+    }
 
     case RAINBOW_M: {
       const unsigned long elapsed = millis() - startMs;

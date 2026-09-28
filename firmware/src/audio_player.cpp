@@ -84,6 +84,9 @@ bool loadWav(const char* path, Clip& c) {
     rd += n;
   }
   f.close();
+  if (rd < dataBytes)  // corrupted LittleFS (see partitions_audio.csv) -> song cut short
+    Serial.printf("audio: %s TRUNCATED (%u/%u bytes) — re-run `pio run -t uploadfs`\n",
+                  path, rd, dataBytes);
   c.frames = rd / (2 * c.channels);
   c.ok = true;
   Serial.printf("audio: loaded %s (%u Hz, %u ch, %u frames)\n", path, c.rate,

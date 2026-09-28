@@ -115,8 +115,13 @@ static const int FLASH_LAST  = 120;
 // Colours (Adafruit_NeoPixel::Color() takes R,G,B; the driver reorders to GRB).
 static const uint8_t EYE_R = 255, EYE_G = 60, EYE_B = 0;        // orange
 static const uint8_t FLASH_R = 255, FLASH_G = 255, FLASH_B = 255;  // white
-// While the idle chime plays, the FLASH section glows steady yellow.
+// While the idle chime plays, the FLASH section glows yellow, pulsing smoothly
+// between IDLE_GLOW_MIN and IDLE_GLOW_MAX (0-255, scales the colour) once per
+// IDLE_GLOW_PULSE_MS.
 static const uint8_t IDLE_GLOW_R = 255, IDLE_GLOW_G = 180, IDLE_GLOW_B = 0;
+static const int IDLE_GLOW_MIN = 20;
+static const int IDLE_GLOW_MAX = 255;
+static const unsigned long IDLE_GLOW_PULSE_MS = 1600;
 static const unsigned long EYE_FLASH_ON_MS  = 220;  // lit time per blink
 static const unsigned long EYE_FLASH_OFF_MS = 220;  // dark time per blink
 

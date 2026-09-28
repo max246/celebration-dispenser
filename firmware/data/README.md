@@ -37,10 +37,14 @@ ffmpeg -i in.mp3 -map_metadata -1 -ar 22050 -ac 1 -c:a pcm_s16le out.wav
 
 ## Size
 
-WAV is uncompressed, and the LittleFS partition is **~2 MB** (see
-`../partitions_audio.csv`). At 22050 Hz mono that's ~44 KB/s, so ~**45 s total**
+WAV is uncompressed, and the LittleFS partition is **1.75 MB** (see
+`../partitions_audio.csv`). At 22050 Hz mono that's ~44 KB/s, so ~**40 s total**
 across both files — trim the idle loop (`-t 30`) or drop the sample rate if you
 need more. Each clip is also loaded whole into PSRAM at boot, so both must fit in
 the ~2 MB of PSRAM too (they will, if they fit the partition).
+
+If a sound cuts off early, check the boot log for `audio: ... TRUNCATED`. The
+partition must not overlap 0x2D0000–0x300000: every app upload writes the
+Feather's tinyuf2 bootloader there, which used to corrupt the files.
 - The `.mp3` files are git-ignored (they can be large / personal); only this
   README is tracked.

@@ -128,6 +128,7 @@ void loop() {
   switch (state) {
     case IDLE:
       buttonled::update();  // breathe
+      lights::update();     // pulse the idle glow (no-op when the strip is off)
       if (ENABLE_IDLE_AUDIO && (long)(millis() - nextIdleAudioMs) >= 0) {
         audioplayer::playIdle();
         if (audioplayer::isIdlePlaying()) {

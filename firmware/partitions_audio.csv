@@ -1,8 +1,13 @@
 # Celebration Dispenser partition table (4 MB flash).
-# Single app slot (no OTA) so the LittleFS audio partition can be ~2 MB.
+# Single app slot (no OTA) so the LittleFS audio partition can be large.
+# The adafruit_feather_esp32s2 board definition flashes tinyuf2.bin at 0x2D0000
+# on EVERY app upload, so that range is reserved here — anything placed there
+# (it used to be the middle of the audio partition) gets overwritten, which
+# corrupted celebrate.wav and cut the song off after ~5 s.
 # Name,     Type, SubType,  Offset,    Size
 nvs,        data, nvs,      0x9000,    0x5000
 otadata,    data, ota,      0xe000,    0x2000
-app0,       app,  ota_0,    0x10000,   0x1E0000
-spiffs,     data, spiffs,   0x1F0000,  0x200000
+app0,       app,  ota_0,    0x10000,   0x100000
+spiffs,     data, spiffs,   0x110000,  0x1C0000
+uf2,        data, 0x40,     0x2D0000,  0x30000
 coredump,   data, coredump, 0x3F0000,  0x10000
