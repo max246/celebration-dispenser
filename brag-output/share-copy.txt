@@ -1,0 +1,1 @@
+Made a Celebration Dispenser — a desktop button that dispenses candy, flashes its eyes, and plays a fanfare when you win. It's a real ESP32 rig with a stepper + StallGuard anti-jam and an IR break-beam, so it actually knows when the treat dropped. 🍬🎉 Open source (MIT): github.com/max246/celebration-dispenser

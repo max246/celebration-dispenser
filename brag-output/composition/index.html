@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0e0f13;
+      }
+      :root {
+        --bg: #0e0f13; --surface: #171a21; --line: #2a2f3a;
+        --orange: #ff7a1a; --orange-soft: #ffab63; --green: #38d66b;
+        --text: #f5f5f2; --muted: #9aa0aa;
+        --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      }
+      #root { position: relative; width: 100%; height: 100%; background: var(--bg); font-family: var(--sans); color: var(--text); }
+      .clip { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .stage { position: relative; width: 1920px; height: 1080px; display: flex; align-items: center; justify-content: center; }
+
+      /* ---- Scene 1: button ---- */
+      #s1-wrap { display: flex; flex-direction: column; align-items: center; gap: 46px; }
+      #s1-button {
+        width: 260px; height: 260px; border-radius: 50%;
+        background: radial-gradient(circle at 50% 42%, #22262f 0%, #12141a 70%);
+        border: 7px solid var(--orange);
+        box-shadow: 0 0 4px var(--orange), 0 0 60px rgba(255,122,26,0.45), inset 0 0 40px rgba(255,122,26,0.20);
+        display: flex; align-items: center; justify-content: center;
+      }
+      #s1-button::after { content: ""; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, rgba(255,122,26,0.35), rgba(255,122,26,0.05)); }
+      #s1-label { font-family: var(--mono); font-size: 34px; letter-spacing: 0.42em; text-transform: uppercase; color: var(--muted); padding-left: 0.42em; }
+      #s1-flash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 46%, #ffffff 0%, rgba(255,255,255,0.0) 60%); opacity: 0; }
+
+      /* ---- Scene 2: reveal ---- */
+      #s2-wrap { display: flex; flex-direction: column; align-items: center; gap: 30px; z-index: 2; }
+      #s2-title { font-size: 108px; font-weight: 800; letter-spacing: 0.01em; text-align: center; line-height: 1.0; }
+      #s2-title span { color: var(--orange); }
+      #s2-sub { font-family: var(--mono); font-size: 30px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted); }
+      #s2-machine { position: absolute; top: 150px; left: 50%; width: 300px; height: 520px; margin-left: -150px; opacity: 0.28; z-index: 1; }
+      #s2-eyes { display: flex; gap: 40px; }
+      .eye { width: 58px; height: 34px; border-radius: 16px; background: var(--orange); box-shadow: 0 0 26px rgba(255,122,26,0.8); }
+
+      /* ---- Scene 3: sequence ---- */
+      #s3-eyes { position: absolute; top: 150px; left: 50%; margin-left: -79px; display: flex; gap: 44px; }
+      #s3-stage { position: absolute; left: 300px; top: 300px; width: 520px; height: 520px; }
+      #s3-wheel { position: absolute; left: 60px; top: 60px; width: 240px; height: 240px; }
+      #s3-candy { position: absolute; left: 158px; top: 150px; width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, #ff5a8a, #ffce54); box-shadow: 0 0 18px rgba(255,120,150,0.6); }
+      #s3-beam { position: absolute; left: 20px; top: 400px; width: 460px; height: 0; border-top: 4px dashed #ff5566; }
+      #s3-beamglow { position: absolute; left: 20px; top: 392px; width: 460px; height: 18px; background: rgba(56,214,107,0.0); border-radius: 8px; }
+      #s3-confirm {
+        position: absolute; left: 980px; top: 470px; display: flex; align-items: center; gap: 16px;
+        padding: 20px 34px; border-radius: 16px; background: rgba(56,214,107,0.12);
+        border: 2px solid var(--green); font-size: 40px; font-weight: 700; color: var(--green); white-space: nowrap;
+      }
+      #s3-confirm .tick { font-size: 46px; }
+      #s3-rainbow-wrap { position: absolute; left: 980px; top: 600px; width: 620px; height: 30px; border-radius: 15px; background: #171a21; overflow: hidden; border: 1px solid var(--line); }
+      #s3-rainbow { position: absolute; inset: 0; width: 620px; background: linear-gradient(90deg,#ff4d4d,#ff9a3d,#ffe23d,#4dff88,#4dd2ff,#8a6bff,#ff6bd6); transform-origin: left center; }
+      #s3-cap { position: absolute; left: 980px; top: 300px; font-family: var(--mono); font-size: 26px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+
+      /* ---- Scene 4: specs ---- */
+      #s4-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; width: 1120px; }
+      #s4-title { font-family: var(--mono); font-size: 30px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+      .chip {
+        display: flex; align-items: center; gap: 22px; width: 100%;
+        padding: 24px 34px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line);
+        font-size: 40px; font-weight: 600;
+      }
+      .chip .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 16px rgba(255,122,26,0.7); flex: none; }
+      .chip small { font-family: var(--mono); font-weight: 500; font-size: 30px; color: var(--muted); }
+
+      /* ---- Scene 5: outro ---- */
+      #s5-wrap { display: flex; flex-direction: column; align-items: center; gap: 40px; z-index: 2; }
+      #s5-line { font-size: 78px; font-weight: 800; text-align: center; max-width: 1400px; line-height: 1.1; }
+      #s5-line b { color: var(--orange); }
+      #s5-repo { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+      #s5-repo .url { font-family: var(--mono); font-size: 40px; color: var(--text); }
+      #s5-repo .lic { font-family: var(--mono); font-size: 26px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted); }
+      #s5-confetti { position: absolute; inset: 0; z-index: 1; }
+      .confetti { position: absolute; left: 960px; top: 470px; width: 22px; height: 12px; border-radius: 3px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="19" data-width="1920" data-height="1080">
+
+      <!-- audio -->
+      <audio id="bgm"   data-start="0"    data-duration="19" data-track-index="10" data-volume="0.5" data-fade-out="1.2" src="assets/music/bgm.mp3"></audio>
+      <audio id="sfx-press" data-start="2.0"  data-track-index="11" data-volume="0.8" src="assets/sfx/press.ogg"></audio>
+      <audio id="sfx-drop"  data-start="8.85" data-track-index="12" data-volume="0.85" src="assets/sfx/drop.ogg"></audio>
+      <audio id="sfx-chime" data-start="9.05" data-track-index="13" data-volume="0.8" src="assets/sfx/chime.ogg"></audio>
+      <audio id="sfx-pop"   data-start="16.2" data-track-index="14" data-volume="0.85" src="assets/sfx/chime.ogg"></audio>
+
+      <!-- Scene 1 -->
+      <div class="clip" id="s1" data-start="0" data-duration="3" data-track-index="0">
+        <div class="stage">
+          <div id="s1-wrap">
+            <div id="s1-button"></div>
+            <div id="s1-label">Press the button</div>
+          </div>
+          <div id="s1-flash"></div>
+        </div>
+      </div>
+
+      <!-- Scene 2 -->
+      <div class="clip" id="s2" data-start="3" data-duration="3.5" data-track-index="1">
+        <div class="stage">
+          <svg id="s2-machine" viewBox="0 0 300 520" fill="none">
+            <polygon points="40,20 260,20 300,120 0,120" fill="#c8631f"/>
+            <rect x="70" y="120" width="160" height="210" rx="14" fill="#3b6ea5"/>
+            <line x1="90" y1="330" x2="30" y2="500" stroke="#8a5a2b" stroke-width="12" stroke-linecap="round"/>
+            <line x1="210" y1="330" x2="270" y2="500" stroke="#8a5a2b" stroke-width="12" stroke-linecap="round"/>
+            <line x1="120" y1="330" x2="110" y2="500" stroke="#8a5a2b" stroke-width="12" stroke-linecap="round"/>
+            <line x1="180" y1="330" x2="190" y2="500" stroke="#8a5a2b" stroke-width="12" stroke-linecap="round"/>
+            <rect x="20" y="496" width="260" height="14" rx="6" fill="#8a5a2b"/>
+          </svg>
+          <div id="s2-wrap">
+            <div id="s2-eyes"><div class="eye"></div><div class="eye"></div></div>
+            <div id="s2-title">CELEBRATION<br /><span>DISPENSER</span></div>
+            <div id="s2-sub">a desktop machine for winning</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 3 -->
+      <div class="clip" id="s3" data-start="6.5" data-duration="5.5" data-track-index="2">
+        <div class="stage">
+          <div id="s3-cap">the celebration</div>
+          <div id="s3-eyes"><div class="eye"></div><div class="eye"></div></div>
+          <div id="s3-stage">
+            <svg id="s3-wheel" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="46" fill="#171a21" stroke="#3b6ea5" stroke-width="4"/>
+              <g stroke="#ff7a1a" stroke-width="4" stroke-linecap="round">
+                <line x1="50" y1="8" x2="50" y2="24"/>
+                <line x1="50" y1="76" x2="50" y2="92"/>
+                <line x1="8" y1="50" x2="24" y2="50"/>
+                <line x1="76" y1="50" x2="92" y2="50"/>
+                <line x1="20" y1="20" x2="31" y2="31"/>
+                <line x1="80" y1="20" x2="69" y2="31"/>
+                <line x1="20" y1="80" x2="31" y2="69"/>
+                <line x1="80" y1="80" x2="69" y2="69"/>
+              </g>
+              <circle cx="50" cy="50" r="8" fill="#ff7a1a"/>
+            </svg>
+            <div id="s3-candy"></div>
+            <div id="s3-beamglow"></div>
+            <div id="s3-beam"></div>
+          </div>
+          <div id="s3-confirm"><span class="tick">✓</span><span>drop confirmed</span></div>
+          <div id="s3-rainbow-wrap"><div id="s3-rainbow"></div></div>
+        </div>
+      </div>
+
+      <!-- Scene 4 -->
+      <div class="clip" id="s4" data-start="12" data-duration="4" data-track-index="3">
+        <div class="stage">
+          <div id="s4-wrap">
+            <div id="s4-title">under the hood</div>
+            <div class="chip" id="s4-c1"><span class="dot"></span><span>ESP32-S2 Feather</span></div>
+            <div class="chip" id="s4-c2"><span class="dot"></span><span>TMC2209 &nbsp;<small>StallGuard anti-jam</small></span></div>
+            <div class="chip" id="s4-c3"><span class="dot"></span><span>IR break-beam &nbsp;<small>drop confirmation</small></span></div>
+            <div class="chip" id="s4-c4"><span class="dot"></span><span>WS2812 &nbsp;<small>light show</small></span></div>
+            <div class="chip" id="s4-c5"><span class="dot"></span><span>WAV audio &nbsp;<small>over I2S</small></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 5 -->
+      <div class="clip" id="s5" data-start="16" data-duration="3" data-track-index="4">
+        <div class="stage">
+          <div id="s5-confetti"></div>
+          <div id="s5-wrap">
+            <div id="s5-line">It even knows when the candy <b>actually dropped</b>.</div>
+            <div id="s5-repo">
+              <div class="url">github.com/max246/celebration-dispenser</div>
+              <div class="lic">Open source · MIT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ---- deterministic confetti ----
+      (function buildConfetti() {
+        var host = document.getElementById("s5-confetti");
+        var cols = ["#ff7a1a", "#ff4d4d", "#ffe23d", "#4dff88", "#4dd2ff", "#8a6bff", "#ff6bd6"];
+        // fixed (deterministic) spread: angle in deg, distance, rotation
+        var seed = [10, 40, 72, 110, 150, 185, 215, 250, 285, 315, 345, 25, 130, 300];
+        for (var i = 0; i < seed.length; i++) {
+          var el = document.createElement("div");
+          el.className = "confetti";
+          el.style.background = cols[i % cols.length];
+          host.appendChild(el);
+        }
+      })();
+
+      var tl = gsap.timeline({ paused: true });
+
+      /* ===== Scene 1 (0–3) ===== */
+      tl.fromTo("#s1-button", { scale: 0.98 }, { scale: 1.03, duration: 0.85, ease: "sine.inOut", repeat: 1, yoyo: true }, 0.15);
+      tl.fromTo("#s1-label", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.4);
+      // the press
+      tl.to("#s1-button", { scale: 0.9, duration: 0.12, ease: "power2.in", overwrite: "auto" }, 2.0);
+      tl.to("#s1-button", { scale: 1.0, duration: 0.18, ease: "power2.out", overwrite: "auto" }, 2.12);
+      tl.fromTo("#s1-flash", { opacity: 0 }, { opacity: 0.95, duration: 0.16, ease: "power2.out" }, 2.05);
+      tl.to("#s1-flash", { opacity: 0, duration: 0.6, ease: "power2.out" }, 2.24);
+      tl.to("#s1-wrap", { opacity: 0, duration: 0.35 }, 2.4);
+
+      /* ===== Scene 2 (3–6.5) ===== */
+      tl.fromTo("#s2-machine", { opacity: 0, y: 40 }, { opacity: 0.28, y: 0, duration: 0.8, ease: "power2.out" }, 3.05);
+      // beat-locked: 3.02s
+      tl.fromTo("#s2-title", { opacity: 0, scale: 1.14, y: 6 }, { opacity: 1, scale: 1, y: 0, duration: 0.42, ease: "power3.out" }, 3.02);
+      tl.fromTo("#s2-eyes", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.28, ease: "back.out(2)", immediateRender: false }, 3.55);
+      tl.to("#s2-eyes", { opacity: 0.35, duration: 0.14, repeat: 1, yoyo: true }, 3.95);
+      tl.fromTo("#s2-sub", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 4.05);
+      tl.to("#s2-wrap", { opacity: 0, duration: 0.3 }, 6.25);
+      tl.to("#s2-machine", { opacity: 0, duration: 0.3 }, 6.25);
+
+      /* ===== Scene 3 (6.5–12) ===== */
+      tl.fromTo("#s3-cap", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 }, 6.6);
+      // flashing eyes (finite)
+      tl.fromTo("#s3-eyes", { opacity: 1 }, { opacity: 0.2, duration: 0.28, ease: "power1.inOut", repeat: 9, yoyo: true }, 6.6);
+      // spinning wheel (finite)
+      tl.fromTo("#s3-wheel", { rotation: 0, transformOrigin: "50% 50%" }, { rotation: 720, duration: 3.0, ease: "power1.inOut" }, 6.7);
+      // candy falls from wheel, past the beam
+      tl.set("#s3-candy", { opacity: 0, y: 0 }, 0);
+      tl.to("#s3-candy", { opacity: 1, duration: 0.2 }, 7.7);
+      tl.to("#s3-candy", { y: 300, duration: 1.15, ease: "power1.in" }, 7.7);
+      // beam reacts as candy crosses (~8.85)
+      tl.fromTo("#s3-beamglow", { backgroundColor: "rgba(56,214,107,0.0)" }, { backgroundColor: "rgba(56,214,107,0.55)", duration: 0.12 }, 8.8);
+      tl.to("#s3-beamglow", { backgroundColor: "rgba(56,214,107,0.0)", duration: 0.5 }, 8.95);
+      tl.to("#s3-candy", { opacity: 0, duration: 0.25 }, 8.95);
+      // confirm stamp
+      tl.fromTo("#s3-confirm", { opacity: 0, scale: 1.35 }, { opacity: 1, scale: 1, duration: 0.34, ease: "back.out(2.2)" }, 9.0);
+      // rainbow sweep
+      tl.fromTo("#s3-rainbow", { scaleX: 0 }, { scaleX: 1, duration: 1.0, ease: "power2.out" }, 9.2);
+      tl.fromTo("#s3-rainbow-wrap", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 9.2);
+      tl.to("#s3-stage", { opacity: 0, duration: 0.3 }, 11.75);
+      tl.to(["#s3-cap", "#s3-eyes"], { opacity: 0, duration: 0.3 }, 11.75);
+
+      /* ===== Scene 4 (12–16) ===== */
+      tl.fromTo("#s4-title", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 }, 12.1);
+      // beat-grid: chips every 0.5s (every other beat) for readability
+      var chips = ["#s4-c1", "#s4-c2", "#s4-c3", "#s4-c4", "#s4-c5"];
+      for (var i = 0; i < chips.length; i++) {
+        tl.fromTo(chips[i], { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.42, ease: "power2.out" }, 12.35 + i * 0.5);
+      }
+      tl.to("#s4-wrap", { opacity: 0, duration: 0.3 }, 15.75);
+
+      /* ===== Scene 5 (16–19) ===== */
+      tl.fromTo("#s5-line", { opacity: 0, scale: 1.08, y: 8 }, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "power3.out" }, 16.05);
+      tl.fromTo("#s5-repo", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 17.2);
+      // confetti burst (deterministic)
+      (function animateConfetti() {
+        var pieces = document.querySelectorAll("#s5-confetti .confetti");
+        var angles = [10, 40, 72, 110, 150, 185, 215, 250, 285, 315, 345, 25, 130, 300];
+        var dists  = [340, 420, 300, 460, 360, 500, 320, 440, 380, 470, 330, 410, 490, 350];
+        var rots   = [120, -160, 200, -90, 260, -220, 140, -300, 180, -120, 240, -200, 160, -260];
+        for (var i = 0; i < pieces.length; i++) {
+          var a = angles[i] * Math.PI / 180;
+          var dx = Math.cos(a) * dists[i];
+          var dy = Math.sin(a) * dists[i] - 60;
+          tl.fromTo(pieces[i],
+            { x: 0, y: 0, opacity: 1, scale: 0.5, rotation: 0 },
+            { x: dx, y: dy, opacity: 0, scale: 1, rotation: rots[i], duration: 1.4, ease: "power2.out" }, 16.15);
+        }
+      })();
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

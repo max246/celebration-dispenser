@@ -144,9 +144,9 @@ static const int  CELEBRATION_VOLUME = 21;    // 0-21 (21 = full digital scale)
 static const bool ENABLE_IDLE_AUDIO  = true;  // chime an ambient sound while idle
 static const int  IDLE_VOLUME        = 12;    // usually quieter than celebration
 // While idle the idle sound plays once, then again every IDLE_AUDIO_PERIOD_MS
-// (30 s) as long as nobody presses the button. The timer resets after each
+// (5 min) as long as nobody presses the button. The timer resets after each
 // celebration, so the next idle chime is one full period later (no instant replay).
-static const unsigned long IDLE_AUDIO_PERIOD_MS = 30UL * 1000UL;
+static const unsigned long IDLE_AUDIO_PERIOD_MS = 5UL * 60UL * 1000UL;
 
 // ---- Celebration timing ----------------------------------------------------
 // The show runs at least this long even if the motor finishes early.
