@@ -46,5 +46,6 @@ the ~2 MB of PSRAM too (they will, if they fit the partition).
 If a sound cuts off early, check the boot log for `audio: ... TRUNCATED`. The
 partition must not overlap 0x2D0000–0x300000: every app upload writes the
 Feather's tinyuf2 bootloader there, which used to corrupt the files.
-- The `.mp3` files are git-ignored (they can be large / personal); only this
-  README is tracked.
+- The WAVs used in the final build (`celebrate.wav`, `idle.wav`) are committed
+  here, so `pio run -t uploadfs` works straight from a fresh clone. Source MP3s
+  are in [`../../music/`](../../music/).

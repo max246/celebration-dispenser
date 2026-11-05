@@ -15,6 +15,23 @@ This repo has two halves:
 | [`hardware/`](hardware/) | 3D-printable STL parts (finger-wheel dispenser) + bill of materials + assembly guide |
 | [`firmware/`](firmware/) | ESP32-S2 firmware (PlatformIO / Arduino) that runs the dispenser |
 
+## Results
+
+It ended up as a Halloween installation — watch it in action:
+
+[![Halloween installation 2026 — watch on YouTube](https://img.youtube.com/vi/IRejrBzZh8A/maxresdefault.jpg)](https://www.youtube.com/watch?v=IRejrBzZh8A)
+
+### Showcase
+
+From printed prototypes to a candy-eating monster on Halloween night:
+
+| | | |
+|:---:|:---:|:---:|
+| <img src="docs/showcase/01-finger-wheel-prototypes.jpg" width="260" alt="Finger-wheel prototypes"> | <img src="docs/showcase/02-wheel-in-housing.jpg" width="260" alt="Finger wheel in its housing"> | <img src="docs/showcase/03-bench-build.jpg" width="260" alt="Bench build on the stand"> |
+| Finger-wheel prototypes | Wheel + gear in the housing | Full bench build: hopper, NEMA 17, ESP32-S2, button, LED strip |
+| <img src="docs/showcase/04-monster-face.jpg" width="260" alt="Painting the monster face"> | <img src="docs/showcase/05-installed-halloween.jpg" width="260" alt="Installed for Halloween"> | <img src="docs/showcase/06-candy-hopper.jpg" width="260" alt="Candy loaded in the hopper"> |
+| Painting the monster face | Installed: press the nose, get candy | Loaded with treats |
+
 ## How it works
 
 ```
@@ -54,6 +71,7 @@ idle sounds are 16-bit WAV files in `firmware/data/` (uploaded with
 
 ## License
 
-[MIT](LICENSE) © Christian Bianchini. Note the bundled audio in `music/` /
-`firmware/data/` is git-ignored and not covered by this license — supply your
-own sounds.
+[MIT](LICENSE) © Christian Bianchini. The sounds used in the final build are
+included — source MP3s in `music/`, ready-to-flash WAVs in `firmware/data/`
+(`pio run -t uploadfs`). They are not covered by the MIT license; swap in your
+own if you redistribute.
